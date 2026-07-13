@@ -6,13 +6,13 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/golang-jwt/jwt/v5"
+	woomMiddleware "woom/server/api/middleware"
 )
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	streamId, err := h.helperCreateStreamId()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "stream_id_generation_failed", "无法创建用户流")
 		return
 	}
 
@@ -32,8 +32,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 	tokenString, err := token.SignedString([]byte(h.key))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "token_generation_failed", "无法创建用户身份")
 		return
 	}
 

@@ -16,8 +16,7 @@ func JWTAuth(secret string) func(next http.Handler) http.Handler {
 			})
 
 			if err != nil {
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte(err.Error()))
+				WriteError(w, r, http.StatusUnauthorized, "unauthorized", "请先完成身份验证")
 				return
 			}
 			next.ServeHTTP(w, r)

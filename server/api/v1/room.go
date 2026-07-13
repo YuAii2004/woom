@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	woomMiddleware "woom/server/api/middleware"
 	"woom/server/helper"
 	"woom/server/model"
 
@@ -16,8 +17,7 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	roomId := helper.AddSplitSymbol(helper.GenNumberSecret(idLength))
 	streamId, err := h.helperCreateStreamId()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "stream_id_generation_failed", "无法创建会议流")
 		return
 	}
 
@@ -28,13 +28,11 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 	gobAdmin, err := helper.GobEncode(&admin)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "room_encoding_failed", "无法保存会议状态")
 		return
 	}
 	if err := h.rdb.HSet(context.TODO(), roomId, model.AdminUniqueKey, gobAdmin).Err(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "room_persistence_failed", "无法创建会议")
 		return
 	}
 
@@ -55,8 +53,7 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ShowRoom(w http.ResponseWriter, r *http.Request) {
 	room, err := h.helperShowRoom(r)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "room_read_failed", "无法读取会议")
 		return
 	}
 	render.JSON(w, r, room)

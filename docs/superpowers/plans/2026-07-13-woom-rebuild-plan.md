@@ -21,27 +21,27 @@
 - 新增测试：`server/api/api_test.go`
 - 新增测试：`server/api/v1/room_test.go`
 
-- [ ] **步骤 1：安装锁定版本的前端依赖**
+- [x] **步骤 1：安装锁定版本的前端依赖**
 
 在仓库根目录执行 `npm ci`。预期结果：命令成功结束，并且 `test -x node_modules/.bin/eslint` 不报错。
 
-- [ ] **步骤 2：在自动化测试前增加健康检查接口**
+- [x] **步骤 2：在自动化测试前增加健康检查接口**
 
 注册 `GET /healthz` 作为进程存活接口，返回状态码 200 和 `{"status":"ok"}`。注册 `GET /readyz` 作为依赖就绪接口，检查 Redis；Redis 不可用时返回状态码 503。两个接口都放在 JWT 中间件之外。
 
-- [ ] **步骤 3：统一 API 错误格式**
+- [x] **步骤 3：统一 API 错误格式**
 
 增加一个错误响应辅助函数，写出 `{"error":{"code":"...","message":"...","requestId":"..."}}`，并用于现有房间、用户和流的错误路径。保留原有 HTTP 状态码，不把 Redis 或 JWT 内部错误直接暴露给用户。
 
-- [ ] **步骤 4：为基线契约增加 API 测试**
+- [x] **步骤 4：为基线契约增加 API 测试**
 
 使用 `httptest.NewServer` 和 Redis 测试客户端，覆盖 `POST /user/`、未授权的 `POST /room/`、已授权的新建房间以及 `GET /healthz`。断言状态码、JSON 字段名和 `X-Request-ID` 是否存在。
 
-- [ ] **步骤 5：记录可重复的 Demo 启动命令**
+- [x] **步骤 5：记录可重复的 Demo 启动命令**
 
 在 `README.md` 写明 Node 20+、Go 1.21+、Docker 的要求，以及 `docker compose up -d redis live777`、`npm ci`、`npm run build` 和应用启动命令。增加双浏览器创建会议和加入会议的手工检查表。
 
-- [ ] **步骤 6：验证基线**
+- [x] **步骤 6：验证基线**
 
 执行 `go test ./...`、`npm run lint`、`npm run build` 和 `docker compose config`。预期结果：全部命令退出码为 0，Compose 输出包含 Redis 和 Live777 服务。
 

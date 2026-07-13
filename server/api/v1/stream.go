@@ -7,20 +7,23 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	woomMiddleware "woom/server/api/middleware"
 )
 
 func (h *Handler) CreateRoomStream(w http.ResponseWriter, r *http.Request) {
 	room, err := h.helperShowRoom(r)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "room_read_failed", "无法读取会议")
 		return
 	}
 
 	streamId, err := h.helperCreateStreamId()
+	if err != nil {
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "stream_id_generation_failed", "无法创建会议流")
+		return
+	}
 	if err := h.helperSetRoomStream(r, room.RoomId, streamId, &model.Stream{}); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "stream_persistence_failed", "无法加入会议")
 		return
 	}
 	room.StreamId = streamId
@@ -31,21 +34,18 @@ func (h *Handler) UpdateRoomStream(w http.ResponseWriter, r *http.Request) {
 	streamId := chi.URLParam(r, "streamId")
 	room, err := h.helperShowRoom(r)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "room_read_failed", "无法读取会议")
 		return
 	}
 
 	stream := &model.Stream{}
 	if err := render.DecodeJSON(r.Body, stream); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusBadRequest, "invalid_request", "请求格式不正确")
 		return
 	}
 
 	if err := h.helperSetRoomStream(r, room.RoomId, streamId, stream); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "stream_persistence_failed", "无法更新会议流")
 		return
 	}
 	room.StreamId = streamId
@@ -57,8 +57,7 @@ func (h *Handler) DestroyRoomStream(w http.ResponseWriter, r *http.Request) {
 	streamId := chi.URLParam(r, "streamId")
 
 	if err := h.rdb.HDel(context.TODO(), roomId, streamId).Err(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "stream_deletion_failed", "无法离开会议")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

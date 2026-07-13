@@ -36,9 +36,25 @@ func NewApi(rdb *redis.Client, secret string, live777Url string, live777Token st
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
 	r := chi.NewRouter()
+	r.Use(woomMiddleware.RequestID)
 	r.Use(middleware.Logger)
 
 	handle := v1.NewHandler(rdb, secret)
+
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
+	r.Get("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if err := rdb.Ping(r.Context()).Err(); err != nil {
+			woomMiddleware.WriteError(w, r, http.StatusServiceUnavailable, "dependencies_unavailable", "会议依赖服务尚未就绪")
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ready"}`))
+	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(woomMiddleware.JWTAuth(secret))
