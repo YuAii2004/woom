@@ -89,6 +89,16 @@ npm run build
 go build -tags release -trimpath -o woom
 ```
 
+Vue 和 daisyUI 迁移入口目前以旁路方式提供：
+
+```bash
+npm run dev:vue
+npm run build:vue
+npm run test:e2e:vue
+```
+
+Vue 开发服务默认使用 5173 端口；如果 React Demo 正在运行，请用 `npm run dev:vue -- --port 5174` 启动并打开 5174 端口。
+
 构建 Docker 镜像：
 
 ```bash

@@ -233,27 +233,27 @@
 - 新增：`webapp/src/style.css`
 - 对照验证完成后删除：`webapp/app.tsx`、`webapp/main.tsx`、`webapp/pages/`、`webapp/components/`、`webapp/store/` 和 React 专用依赖。
 
-- [ ] **步骤 1：增加 Vue 工具链但暂不删除 React**
+- [x] **步骤 1：增加 Vue 工具链但暂不删除 React**
 
 加入 Vue、Pinia、Vue 编译器、`vue-tsc`、Tailwind CSS、daisyUI、Vue ESLint 支持和 Vite Vue 插件。增加 `typecheck`、`lint:vue` 和 `build:vue` 脚本；行为一致性验证完成前保留 React 脚本。
 
-- [ ] **步骤 2：迁移领域类型和 API 客户端**
+- [x] **步骤 2：迁移领域类型和 API 客户端**
 
 把房间、流、用户、错误和请求 id 类型迁移到带类型的 Vue 模块。保持 `contracts/woom-v1.yaml` 中的 `/user/`、`/room/`、流、WHIP 和 WHEP 路径完全一致。
 
-- [ ] **步骤 3：迁移会话和会议状态**
+- [x] **步骤 3：迁移会话和会议状态**
 
 使用 Pinia 管理持久化用户/会话数据、当前会议 id、参会者流、设备状态和屏幕共享状态。每个仓库只暴露带类型的动作，不直接访问 DOM。
 
-- [ ] **步骤 4：迁移准备和会议流程**
+- [x] **步骤 4：迁移准备和会议流程**
 
 使用带类型的属性、事件和生命周期清理，实现 `WelcomePage.vue`、`PreparePage.vue` 和 `MeetingPage.vue`。保留现有 WHIP/WHEP 行为以及 `beforeunload`/`unload` 清理，直到浏览器矩阵通过。
 
-- [ ] **步骤 5：使用 daisyUI 重做会议控制区**
+- [x] **步骤 5：使用 daisyUI 重做会议控制区**
 
 使用 daisyUI 的按钮、选择框、提示、加载状态、设置弹窗和响应式布局实现加入、设备、屏幕共享、复制链接和离会操作。固定控件尺寸，确保移动端文字不重叠。
 
-- [ ] **步骤 6：执行 Vue 静态检查和行为一致性测试**
+- [x] **步骤 6：执行 Vue 静态检查和行为一致性测试**
 
 执行 `npm run lint:vue`、`npm run typecheck`、`npm run build:vue` 和完整 Playwright 会议流程。预期结果：React 基线中的每个场景都在 Vue 上通过后，才能删除 React。
 
