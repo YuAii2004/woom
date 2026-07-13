@@ -55,19 +55,19 @@
 - 修改：`server/model/model.go`
 - 修改：`webapp/lib/api.ts`
 
-- [ ] **步骤 1：编写 OpenAPI 契约**
+- [x] **步骤 1：编写 OpenAPI 契约**
 
 描述 `/user/`、`/room/`、`/room/{roomId}`、全部流接口、`/healthz`、`/readyz`、`/client-events`、`/whip/{uuid}` 和 `/whep/{uuid}` 的请求、响应、鉴权、错误和状态码行为。明确 `streamId`、`token`、`roomId` 和 `streams` 的实际 JSON 大小写。
 
-- [ ] **步骤 2：让 Go JSON 模型与契约一致**
+- [x] **步骤 2：让 Go JSON 模型与契约一致**
 
 明确 `Room`、`RoomAdmin`、`Stream`、`User` 和错误响应的类型。删除前端把 `locked` 固定当成 `false` 的假设，并保留 `presenter` 和 `streamId` 的可选语义。
 
-- [ ] **步骤 3：增加响应兼容性测试**
+- [x] **步骤 3：增加响应兼容性测试**
 
 使用表格驱动测试序列化代表性的房间、流、用户和错误对象，再与契约中的字段集合比较。字段重命名或静默删除时测试必须失败。
 
-- [ ] **步骤 4：验证接口契约**
+- [x] **步骤 4：验证接口契约**
 
 执行 `go test ./server/api/... ./server/model/...` 和 `npm run lint`。预期结果：两个命令都通过，JSON 字段大小写没有漂移。
 

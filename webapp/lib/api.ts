@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 interface Room {
   roomId: string,
-  locked: false,
+  locked: boolean,
   owner: string,
   presenter?: string,
-  streams: any,
+  streamId?: string,
+  streams?: Record<string, Stream>,
 }
 
 /**
@@ -68,27 +67,7 @@ async function getRoom(roomId: string): Promise<Room> {
   })).json()
 }
 
-async function setRoom(roomId: string, data: any): Promise<Room> {
-  return (await fetch(`/room/${roomId}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  })).json()
-}
-
-async function delRoom(roomId: string): Promise<void> {
-  return (await fetch(`/room/${roomId}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-    method: 'DELETE',
-  })).json()
-}
-
-async function newStream(roomId: string): Promise<Stream> {
+async function newStream(roomId: string): Promise<Room> {
   return (await fetch(`/room/${roomId}/stream`, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -97,7 +76,7 @@ async function newStream(roomId: string): Promise<Stream> {
   })).json()
 }
 
-async function setStream(streamId: string, data: any): Promise<Stream> {
+async function setStream(streamId: string, data: Stream): Promise<Room> {
   return (await fetch(`/room/${roomId}/stream/${streamId}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -108,7 +87,7 @@ async function setStream(streamId: string, data: any): Promise<Stream> {
   })).json()
 }
 
-async function delStream(roomId: string, streamId: string): Promise<any> {
+async function delStream(roomId: string, streamId: string): Promise<Response> {
   return fetch(`/room/${roomId}/stream/${streamId}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -125,9 +104,6 @@ export {
 
   newRoom,
   getRoom,
-  setRoom,
-  delRoom,
-
   newStream,
   setStream,
   delStream,
@@ -138,5 +114,7 @@ export {
 }
 
 export type {
+  Room,
   Stream,
+  User,
 }

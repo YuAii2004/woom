@@ -1,0 +1,352 @@
+openapi: 3.0.3
+info:
+  title: WOOM 会议服务接口
+  version: 1.0.0
+  description: WOOM 一期会议服务的稳定 HTTP 接口契约。
+servers:
+  - url: http://localhost:4000
+    description: 本地开发服务
+tags:
+  - name: 用户
+  - name: 房间
+  - name: 会议流
+  - name: 服务状态
+  - name: 媒体代理
+paths:
+  /user/:
+    post:
+      tags: [用户]
+      summary: 创建匿名用户
+      description: 创建一个长期有效的会议流身份和 JWT。
+      responses:
+        '200':
+          description: 用户创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /room/:
+    post:
+      tags: [房间]
+      summary: 创建会议房间
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 房间创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /room/{roomId}:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    get:
+      tags: [房间]
+      summary: 查询会议房间
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 房间查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /room/{roomId}/stream:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    post:
+      tags: [会议流]
+      summary: 为会议创建参会流
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 参会流创建成功，返回更新后的房间信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /room/{roomId}/stream/{streamId}:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+      - $ref: '#/components/parameters/StreamId'
+    patch:
+      tags: [会议流]
+      summary: 更新参会流状态
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Stream'
+      responses:
+        '200':
+          description: 参会流更新成功，返回更新后的房间信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [会议流]
+      summary: 删除参会流
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204':
+          description: 参会流删除成功，无响应体
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /healthz:
+    get:
+      tags: [服务状态]
+      summary: 检查进程存活
+      responses:
+        '200':
+          description: 进程正在运行
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /readyz:
+    get:
+      tags: [服务状态]
+      summary: 检查依赖是否就绪
+      responses:
+        '200':
+          description: Redis 和服务配置已经就绪
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyStatus'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /client-events:
+    post:
+      tags: [服务状态]
+      summary: 接收前端诊断事件
+      description: 该接口只接收受限大小的诊断元数据，不接收凭据、媒体内容或 WebRTC 协商内容。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientEvent'
+      responses:
+        '202':
+          description: 事件已接收
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /whip/{uuid}:
+    parameters:
+      - $ref: '#/components/parameters/MediaId'
+    post:
+      tags: [媒体代理]
+      summary: 代理 WHIP 发布请求
+      description: 请求被转发到 Live777，服务端可以追加配置的 Bearer token。
+      requestBody:
+        required: false
+        description: 保留客户端发送的 SDP 请求体。
+        content:
+          '*/*': {}
+      responses:
+        default:
+          description: Live777 的原始响应
+  /whep/{uuid}:
+    parameters:
+      - $ref: '#/components/parameters/MediaId'
+    post:
+      tags: [媒体代理]
+      summary: 代理 WHEP 播放请求
+      description: 请求被转发到 Live777。
+      requestBody:
+        required: false
+        description: 保留客户端发送的 SDP 请求体。
+        content:
+          '*/*': {}
+      responses:
+        default:
+          description: Live777 的原始响应
+components:
+  parameters:
+    RoomId:
+      name: roomId
+      in: path
+      required: true
+      description: 会议房间 id
+      schema:
+        type: string
+    StreamId:
+      name: streamId
+      in: path
+      required: true
+      description: 参会流 id
+      schema:
+        type: string
+    MediaId:
+      name: uuid
+      in: path
+      required: true
+      description: Live777 媒体流 id
+      schema:
+        type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      required: [streamId, token]
+      properties:
+        streamId:
+          type: string
+        token:
+          type: string
+    Room:
+      type: object
+      required: [roomId, owner, locked]
+      properties:
+        roomId:
+          type: string
+        owner:
+          type: string
+        presenter:
+          type: string
+        locked:
+          type: boolean
+        streamId:
+          type: string
+        streams:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Stream'
+    Stream:
+      type: object
+      required: [name, state, audio, video, screen]
+      properties:
+        name:
+          type: string
+        state:
+          type: string
+        audio:
+          type: boolean
+        video:
+          type: boolean
+        screen:
+          type: boolean
+    Error:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        requestId:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    ReadyStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready]
+    ClientEvent:
+      type: object
+      required: [event, level, service]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum: [debug, info, warn, error]
+        service:
+          type: string
+        event:
+          type: string
+        component:
+          type: string
+        operation:
+          type: string
+        request_id:
+          type: string
+        session_id:
+          type: string
+        room_id:
+          type: string
+        stream_id:
+          type: string
+        browser:
+          type: string
+        os:
+          type: string
+        duration_ms:
+          type: integer
+          minimum: 0
+        error:
+          type: object
+          additionalProperties: true
+        context:
+          type: object
+          additionalProperties: true
+  responses:
+    BadRequest:
+      description: 请求格式不正确
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: 身份验证失败
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: 服务端处理失败
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unavailable:
+      description: 依赖服务尚未就绪
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -15,3 +15,18 @@ type Message struct {
 	Content   string      `json:"content"`
 	CreatedAt Timestamp   `json:"createdAt"`
 }
+
+type User struct {
+	StreamId string `json:"streamId"`
+	Token    string `json:"token"`
+}
+
+type ErrorDetail struct {
+	Code      string `json:"code"`
+	Message   string `json:"message"`
+	RequestID string `json:"requestId"`
+}
+
+type ErrorResponse struct {
+	Error ErrorDetail `json:"error"`
+}
