@@ -44,10 +44,8 @@ fn model_json_matches_the_v1_contract() {
         json!({
             "roomId": "123-456-789",
             "owner": "owner",
-            "presenter": "",
             "locked": false,
-            "streamId": "owner",
-            "streams": {}
+            "streamId": "owner"
         })
     );
 }
