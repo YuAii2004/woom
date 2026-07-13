@@ -1,26 +1,26 @@
 openapi: 3.0.3
 info:
-  title: WOOM 会议服务接口
+  title: WOOM Meeting Service API
   version: 1.0.0
-  description: WOOM 一期会议服务的稳定 HTTP 接口契约。
+  description: Stable HTTP API contract for the first WOOM meeting-service release.
 servers:
   - url: http://localhost:4000
-    description: 本地开发服务
+    description: Local development server
 tags:
-  - name: 用户
-  - name: 房间
-  - name: 会议流
-  - name: 服务状态
-  - name: 媒体代理
+  - name: Users
+  - name: Rooms
+  - name: Meeting streams
+  - name: Service status
+  - name: Media proxy
 paths:
   /user/:
     post:
-      tags: [用户]
-      summary: 创建匿名用户
-      description: 创建一个长期有效的会议流身份和 JWT。
+      tags: [Users]
+      summary: Create an anonymous user
+      description: Creates a long-lived meeting stream identity and JWT.
       responses:
         '200':
-          description: 用户创建成功
+          description: User created successfully
           content:
             application/json:
               schema:
@@ -29,12 +29,12 @@ paths:
           $ref: '#/components/responses/ServerError'
   /room/:
     post:
-      tags: [房间]
-      summary: 创建会议房间
+      tags: [Rooms]
+      summary: Create a meeting room
       security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: 房间创建成功
+          description: Room created successfully
           content:
             application/json:
               schema:
@@ -47,12 +47,12 @@ paths:
     parameters:
       - $ref: '#/components/parameters/RoomId'
     get:
-      tags: [房间]
-      summary: 查询会议房间
+      tags: [Rooms]
+      summary: Get a meeting room
       security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: 房间查询成功
+          description: Room returned successfully
           content:
             application/json:
               schema:
@@ -65,12 +65,12 @@ paths:
     parameters:
       - $ref: '#/components/parameters/RoomId'
     post:
-      tags: [会议流]
-      summary: 为会议创建参会流
+      tags: [Meeting streams]
+      summary: Create a participant stream for a meeting
       security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: 参会流创建成功，返回更新后的房间信息
+          description: Participant stream created successfully; returns the updated room
           content:
             application/json:
               schema:
@@ -84,8 +84,8 @@ paths:
       - $ref: '#/components/parameters/RoomId'
       - $ref: '#/components/parameters/StreamId'
     patch:
-      tags: [会议流]
-      summary: 更新参会流状态
+      tags: [Meeting streams]
+      summary: Update participant stream state
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
@@ -95,7 +95,7 @@ paths:
               $ref: '#/components/schemas/Stream'
       responses:
         '200':
-          description: 参会流更新成功，返回更新后的房间信息
+          description: Participant stream updated successfully; returns the updated room
           content:
             application/json:
               schema:
@@ -107,34 +107,34 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
     delete:
-      tags: [会议流]
-      summary: 删除参会流
+      tags: [Meeting streams]
+      summary: Delete a participant stream
       security: [{ bearerAuth: [] }]
       responses:
         '204':
-          description: 参会流删除成功，无响应体
+          description: Participant stream deleted successfully; no response body
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/ServerError'
   /healthz:
     get:
-      tags: [服务状态]
-      summary: 检查进程存活
+      tags: [Service status]
+      summary: Check process liveness
       responses:
         '200':
-          description: 进程正在运行
+          description: Process is running
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
   /readyz:
     get:
-      tags: [服务状态]
-      summary: 检查依赖是否就绪
+      tags: [Service status]
+      summary: Check dependency readiness
       responses:
         '200':
-          description: Redis 和服务配置已经就绪
+          description: Redis and service configuration are ready
           content:
             application/json:
               schema:
@@ -143,9 +143,9 @@ paths:
           $ref: '#/components/responses/Unavailable'
   /client-events:
     post:
-      tags: [服务状态]
-      summary: 接收前端诊断事件
-      description: 该接口只接收受限大小的诊断元数据，不接收凭据、媒体内容或 WebRTC 协商内容。
+      tags: [Service status]
+      summary: Receive frontend diagnostic events
+      description: Accepts only size-limited diagnostic metadata, not credentials, media content, or WebRTC negotiation payloads.
       requestBody:
         required: true
         content:
@@ -154,60 +154,60 @@ paths:
               $ref: '#/components/schemas/ClientEvent'
       responses:
         '202':
-          description: 事件已接收
+          description: Event accepted
         '400':
           $ref: '#/components/responses/BadRequest'
   /whip/{uuid}:
     parameters:
       - $ref: '#/components/parameters/MediaId'
     post:
-      tags: [媒体代理]
-      summary: 代理 WHIP 发布请求
-      description: 请求被转发到 Live777，服务端可以追加配置的 Bearer token。
+      tags: [Media proxy]
+      summary: Proxy WHIP publish requests
+      description: Forwards the request to Live777 and may append the configured server-side Bearer token.
       requestBody:
         required: false
-        description: 保留客户端发送的 SDP 请求体。
+        description: Preserves the SDP request body sent by the client.
         content:
           '*/*': {}
       responses:
         default:
-          description: Live777 的原始响应
+          description: Raw Live777 response
   /whep/{uuid}:
     parameters:
       - $ref: '#/components/parameters/MediaId'
     post:
-      tags: [媒体代理]
-      summary: 代理 WHEP 播放请求
-      description: 请求被转发到 Live777。
+      tags: [Media proxy]
+      summary: Proxy WHEP playback requests
+      description: Forwards the request to Live777.
       requestBody:
         required: false
-        description: 保留客户端发送的 SDP 请求体。
+        description: Preserves the SDP request body sent by the client.
         content:
           '*/*': {}
       responses:
         default:
-          description: Live777 的原始响应
+          description: Raw Live777 response
 components:
   parameters:
     RoomId:
       name: roomId
       in: path
       required: true
-      description: 会议房间 id
+      description: Meeting room id
       schema:
         type: string
     StreamId:
       name: streamId
       in: path
       required: true
-      description: 参会流 id
+      description: Participant stream id
       schema:
         type: string
     MediaId:
       name: uuid
       in: path
       required: true
-      description: Live777 媒体流 id
+      description: Live777 media stream id
       schema:
         type: string
   securitySchemes:
@@ -327,25 +327,25 @@ components:
           additionalProperties: true
   responses:
     BadRequest:
-      description: 请求格式不正确
+      description: Invalid request format
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     Unauthorized:
-      description: 身份验证失败
+      description: Authentication failed
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     ServerError:
-      description: 服务端处理失败
+      description: Server processing failed
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
     Unavailable:
-      description: 依赖服务尚未就绪
+      description: Dependency services are not ready
       content:
         application/json:
           schema:

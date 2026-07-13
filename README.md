@@ -13,97 +13,97 @@
 
 ---
 
-WOOM 是一个轻量、可自托管的会议服务，媒体能力使用 [Live777](https://github.com/binbat/live777) 提供。
+WOOM is a lightweight, self-hostable meeting service powered by [Live777](https://github.com/binbat/live777) for media transport.
 
-## 当前状态
+## Current Status
 
-当前默认入口使用 Rust 服务端和 Vue 3、TypeScript、daisyUI 前端。Rust 是唯一服务端实现，前端已统一为 Vue。
+The default application now uses a Rust backend and a Vue 3, TypeScript, and daisyUI frontend. Rust is the only backend implementation, and the frontend has been unified on Vue.
 
-一期目标是支持 2～10 人通过链接加入会议，并完成摄像头、麦克风、设备切换、屏幕共享和离会。
+The first release target is a 2 to 10 person meeting flow where participants can join by link, use camera and microphone controls, switch devices, share the screen, and leave cleanly.
 
-## 环境要求
+## Requirements
 
-- Node.js 20 或更高版本
+- Node.js 20 or newer
 - Rust stable
-- Docker Desktop 或其他支持 Docker Compose 的 Docker 环境
+- Docker Desktop or another Docker environment with Docker Compose support
 
-## 本地运行 Demo
+## Run the Demo Locally
 
-### 1. 启动依赖服务
+### 1. Start the dependencies
 
-在项目根目录执行：
+From the project root:
 
 ```bash
 docker compose up -d redis live777
 ```
 
-Redis 默认监听 `localhost:6379`，Live777 默认监听 `localhost:7777`。
+Redis listens on `localhost:6379` by default. Live777 listens on `localhost:7777` by default.
 
-### 2. 安装前端依赖
+### 2. Install frontend dependencies
 
 ```bash
 npm ci
 ```
 
-### 3. 启动 Rust 服务端
+### 3. Start the Rust backend
 
-在一个终端执行：
+In one terminal:
 
 ```bash
 cargo run --manifest-path rust/Cargo.toml
 ```
 
-Rust 服务端默认监听 `http://localhost:4000`。
+The Rust backend listens on `http://localhost:4000` by default.
 
-### 4. 启动 Vue 前端开发服务
+### 4. Start the Vue frontend dev server
 
-在另一个终端执行：
+In another terminal:
 
 ```bash
 npm run dev
 ```
 
-打开终端输出的地址，通常是 `http://localhost:5173`。
+Open the URL printed by the dev server, usually `http://localhost:5173`.
 
-## Demo 验收
+## Demo Acceptance Checklist
 
-1. 在第一个浏览器窗口新建会议。
-2. 复制会议 id 或会议链接。
-3. 在第二个浏览器窗口加入会议。
-4. 分别检查摄像头、麦克风、设备切换和屏幕共享。
-5. 从一个窗口离会，再确认另一个窗口可以看到参会者离开。
-6. 关闭页面后，确认 Redis 中不会长期残留已经离开的流。
+1. Create a meeting in the first browser window.
+2. Copy the meeting id or meeting link.
+3. Join the meeting from a second browser window.
+4. Check camera, microphone, device switching, and screen sharing.
+5. Leave from one window and confirm the other window sees the participant leave.
+6. After closing the pages, confirm Redis does not retain stale departed streams.
 
-## 发布构建
+## Production Build
 
-构建 Vue 前端并编译 Rust 服务：
+Build the Vue frontend and compile the Rust service:
 
 ```bash
 make
 ```
 
-也可以分开执行：
+You can also run the steps separately:
 
 ```bash
 npm run build
 cargo build --release --manifest-path rust/Cargo.toml
 ```
 
-默认入口已经是 Rust、Vue 和 daisyUI。Vue 开发服务默认使用 5173 端口；`npm run dev:vue` 和 `npm run build:vue` 是对应的显式别名。
+The default entrypoint is Rust, Vue, and daisyUI. The Vue dev server uses port 5173 by default. `npm run dev:vue` and `npm run build:vue` are explicit aliases for the same Vue workflow.
 
-构建 Docker 镜像：
+Build the Docker image:
 
 ```bash
 docker build -t woom .
 ```
 
-Compose 会同时启动 Rust/Vue 应用、Redis 和 Live777：
+Compose starts the Rust/Vue app, Redis, and Live777 together:
 
 ```bash
 docker compose up -d
 ```
 
-如果使用 Compose 创建的 `woom` 网络运行镜像：
+To run the image on the Compose-created `woom` network:
 
 ```bash
 docker run --rm --name woom --network woom \
@@ -113,7 +113,7 @@ docker run --rm --name woom --network woom \
   woom
 ```
 
-## 常用检查命令
+## Common Verification Commands
 
 ```bash
 npm run test:unit
@@ -124,22 +124,17 @@ cargo fmt --manifest-path rust/Cargo.toml -- --check
 cargo test --manifest-path rust/Cargo.toml
 ```
 
-Playwright 回归测试覆盖 Chromium、Firefox、Chrome 和 Edge。使用以下命令运行全部本地项目：
+Playwright regression tests cover Chromium, Firefox, Chrome, and Edge. Run all local projects with:
 
 ```bash
 npm run test:e2e
 ```
 
-只运行某一个浏览器项目：
+Run one browser project:
 
 ```bash
 npx playwright test --project=chromium
 npx playwright test --project=firefox
 ```
 
-GitHub Actions 会在 Windows、macOS、Linux 上分别运行 Chrome、Firefox 和 Edge，并在失败时上传测试报告。
-
-## 相关文档
-
-- [重构设计](./docs/superpowers/specs/2026-07-13-woom-rebuild-design.md)
-- [重构实施计划](./docs/superpowers/plans/2026-07-13-woom-rebuild-plan.md)
+GitHub Actions runs Chrome, Firefox, and Edge on Windows, macOS, and Linux, and uploads test reports on failure.
