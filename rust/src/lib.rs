@@ -137,6 +137,27 @@ struct Claims {
     nbf: usize,
 }
 
+#[derive(Debug, Deserialize)]
+struct ClientEvent {
+    timestamp: Option<String>,
+    level: String,
+    service: String,
+    event: String,
+    component: Option<String>,
+    operation: Option<String>,
+    request_id: Option<String>,
+    session_id: Option<String>,
+    room_id: Option<String>,
+    stream_id: Option<String>,
+    browser: Option<String>,
+    os: Option<String>,
+    duration_ms: Option<i64>,
+    #[serde(default)]
+    error: HashMap<String, Value>,
+    #[serde(default)]
+    context: HashMap<String, Value>,
+}
+
 #[derive(Debug, Serialize)]
 struct ErrorBody {
     error: ErrorDetail,
@@ -146,6 +167,8 @@ struct ErrorBody {
 struct ErrorDetail {
     code: String,
     message: String,
+    #[serde(rename = "requestId")]
+    request_id: String,
 }
 
 #[derive(Debug)]
@@ -173,6 +196,7 @@ impl IntoResponse for AppError {
                 error: ErrorDetail {
                     code: self.code.into(),
                     message: self.message.into(),
+                    request_id: String::new(),
                 },
             }),
         )
@@ -193,6 +217,32 @@ async fn request_id(mut request: Request, next: Next) -> Response {
         });
     request.headers_mut().insert("x-request-id", id.clone());
     let mut response = next.run(request).await;
+    if response.status().is_client_error() || response.status().is_server_error() {
+        let status = response.status();
+        let headers = response.headers().clone();
+        let body = axum::body::to_bytes(response.into_body(), 64 * 1024)
+            .await
+            .unwrap_or_default();
+        let request_id = id.to_str().unwrap_or_default().to_owned();
+        let response_body = if let Ok(mut payload) = serde_json::from_slice::<Value>(&body) {
+            if let Some(error) = payload.get_mut("error").and_then(Value::as_object_mut) {
+                error.insert("requestId".into(), Value::String(request_id));
+                serde_json::to_vec(&payload).unwrap_or_else(|_| body.to_vec())
+            } else {
+                body.to_vec()
+            }
+        } else {
+            body.to_vec()
+        };
+        let mut restored = Response::new(Body::from(response_body));
+        *restored.status_mut() = status;
+        for (name, value) in &headers {
+            if name != header::CONTENT_LENGTH {
+                restored.headers_mut().insert(name, value.clone());
+            }
+        }
+        response = restored;
+    }
     response.headers_mut().insert("x-request-id", id);
     println!(
         "{}",
@@ -481,8 +531,54 @@ async fn delete_stream(
     Ok(StatusCode::NO_CONTENT)
 }
 
-async fn client_events(Json(_event): Json<Value>) -> StatusCode {
-    StatusCode::ACCEPTED
+fn sanitize_client_fields(
+    fields: &HashMap<String, Value>,
+    allowed: &[&str],
+) -> serde_json::Map<String, Value> {
+    fields
+        .iter()
+        .filter(|(key, value)| {
+            allowed.contains(&key.as_str())
+                && (value.is_string() || value.is_boolean() || value.is_number())
+        })
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect()
+}
+
+async fn client_events(Json(event): Json<ClientEvent>) -> Result<StatusCode, AppError> {
+    if !matches!(event.level.as_str(), "debug" | "info" | "warn" | "error") {
+        return Err(AppError::new(
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+            "诊断事件级别不正确",
+        ));
+    }
+    if event.service.trim().is_empty() || event.event.trim().is_empty() {
+        return Err(AppError::new(
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+            "诊断事件缺少服务或事件名称",
+        ));
+    }
+    let payload = serde_json::json!({
+        "logged_at": event.timestamp.unwrap_or_else(|| SystemTime::now().duration_since(UNIX_EPOCH).map(|value| value.as_millis().to_string()).unwrap_or_default()),
+        "level": event.level,
+        "service": event.service,
+        "event": event.event,
+        "component": event.component,
+        "operation": event.operation,
+        "request_id": event.request_id,
+        "session_id": event.session_id,
+        "room_id": event.room_id,
+        "stream_id": event.stream_id,
+        "browser": event.browser,
+        "os": event.os,
+        "duration_ms": event.duration_ms,
+        "error": sanitize_client_fields(&event.error, &["code", "kind", "message", "name", "status"]),
+        "context": sanitize_client_fields(&event.context, &["browser", "connection_state", "device_kind", "feature", "http_status", "os", "permission_state", "retry_count"])
+    });
+    println!("{}", payload);
+    Ok(StatusCode::ACCEPTED)
 }
 
 async fn proxy_media(

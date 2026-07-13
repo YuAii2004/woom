@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { WHIPClient } from 'whip-whep/whip'
 import { WHEPClient } from 'whip-whep/whep'
+import { clientLogger } from './logger'
 
 type Screen = 'home' | 'prepare' | 'meeting'
 type StreamState = 'new' | 'signaled' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed'
@@ -48,22 +49,52 @@ const remoteStreams = computed(() => {
 
 async function ensureUser() {
   if (token.value && streamId.value) return
-  const response = await fetch('/user/', { method: 'POST' })
-  if (!response.ok) throw new Error('无法创建用户身份')
+  const requestId = clientLogger.requestId()
+  clientLogger.info('user_create_start', { component: 'api', operation: 'create_user', requestId })
+  const response = await fetch('/user/', { method: 'POST', headers: { 'X-Request-ID': requestId } })
+  if (!response.ok) {
+    clientLogger.error('api_request_failed', { component: 'api', operation: 'create_user', requestId, error: { status: response.status, code: 'user_create_failed', message: '无法创建用户身份' } })
+    throw new Error('无法创建用户身份')
+  }
   const user = await response.json() as User
   token.value = user.token
   streamId.value = user.streamId
   localStorage.setItem('woom-token', user.token)
   localStorage.setItem('woom-stream', user.streamId)
+  clientLogger.info('user_create_complete', { component: 'api', operation: 'create_user', requestId, streamId: user.streamId })
 }
 
 async function api<T>(url: string, init: RequestInit = {}) {
+  const requestId = clientLogger.requestId()
+  let loggedFailure = false
   const headers = new Headers(init.headers)
   headers.set('Authorization', `Bearer ${token.value}`)
+  headers.set('X-Request-ID', requestId)
   if (init.body) headers.set('Content-Type', 'application/json')
-  const response = await fetch(url, { ...init, headers })
-  if (!response.ok) throw new Error('会议服务请求失败')
-  return response.status === 204 ? undefined as T : await response.json() as T
+  try {
+    const response = await fetch(url, { ...init, headers })
+    if (!response.ok) {
+      const body = await response.json().catch(() => undefined) as { error?: { code?: string, message?: string } } | undefined
+      const message = body?.error?.message || '会议服务请求失败'
+      clientLogger.error('api_request_failed', {
+        component: 'api',
+        operation: init.method || 'GET',
+        requestId,
+        roomId: meetingId.value,
+        streamId: streamId.value,
+        error: { status: response.status, code: body?.error?.code || 'request_failed', message },
+        context: { http_status: response.status }
+      })
+      loggedFailure = true
+      throw new Error(message)
+    }
+    return response.status === 204 ? undefined as T : await response.json() as T
+  } catch (error) {
+    if (!loggedFailure) {
+      clientLogger.error('api_request_exception', { component: 'api', operation: init.method || 'GET', requestId, roomId: meetingId.value, streamId: streamId.value, error: { kind: 'network_error', message: error instanceof Error ? error.message : '网络请求失败' } })
+    }
+    throw error
+  }
 }
 
 async function enterPrepare(id: string) {
@@ -91,10 +122,13 @@ async function joinMeeting() {
 
 async function prepareMedia() {
   if (mediaStream.value) return
+  clientLogger.info('media_prepare_start', { component: 'media', operation: 'prepare', roomId: meetingId.value, streamId: streamId.value })
   try {
     mediaStream.value = await withTimeout(navigator.mediaDevices.getUserMedia({ audio: true, video: true }), 5_000)
+    clientLogger.info('media_prepare_complete', { component: 'media', operation: 'prepare', roomId: meetingId.value, streamId: streamId.value })
   } catch {
     mediaStream.value = new MediaStream()
+    clientLogger.warn('media_prepare_failed', { component: 'media', operation: 'prepare', roomId: meetingId.value, streamId: streamId.value, error: { kind: 'permission_or_timeout', message: '无法获取摄像头或麦克风' } })
   }
 }
 
@@ -124,10 +158,13 @@ async function publishMedia() {
   mediaStream.value.getTracks().forEach(track => pc.addTrack(track, mediaStream.value as MediaStream))
   const client = new WHIPClient()
   try {
+    clientLogger.info('whip_start', { component: 'media', operation: 'publish', roomId: meetingId.value, streamId: streamId.value })
     await withTimeout(client.publish(pc, `${location.origin}/whip/${streamId.value}`, token.value), 10_000)
     publisher = { client, pc }
+    clientLogger.info('whip_connected', { component: 'media', operation: 'publish', roomId: meetingId.value, streamId: streamId.value })
   } catch (error) {
     pc.close()
+    clientLogger.error('whip_failed', { component: 'media', operation: 'publish', roomId: meetingId.value, streamId: streamId.value, error: { kind: 'publish_failed', message: error instanceof Error ? error.message : '媒体发布失败' } })
     throw error
   }
 }
@@ -144,11 +181,14 @@ async function subscribeMedia(id: string) {
   }
   const client = new WHEPClient()
   try {
+    clientLogger.info('whep_start', { component: 'media', operation: 'view', roomId: meetingId.value, streamId: id })
     await withTimeout(client.view(pc, `${location.origin}/whep/${id}`), 10_000)
     remoteMedia.set(id, { client, pc, stream })
     remoteMediaVersion.value += 1
-  } catch {
+    clientLogger.info('whep_connected', { component: 'media', operation: 'view', roomId: meetingId.value, streamId: id })
+  } catch (error) {
     pc.close()
+    clientLogger.error('whep_failed', { component: 'media', operation: 'view', roomId: meetingId.value, streamId: id, error: { kind: 'view_failed', message: error instanceof Error ? error.message : '媒体播放失败' } })
   }
 }
 
@@ -166,6 +206,7 @@ function closeMedia() {
 
 async function joinRoom() {
   await run(async () => {
+    clientLogger.info('meeting_join_start', { component: 'meeting', operation: 'join', roomId: meetingId.value, streamId: streamId.value })
     await prepareMedia()
     void publishMedia().catch(() => undefined)
     await api<Room>(`/room/${meetingId.value}/stream/${streamId.value}`, {
@@ -180,6 +221,7 @@ async function joinRoom() {
     })
     screen.value = 'meeting'
     await refreshRoom()
+    clientLogger.info('meeting_joined', { component: 'meeting', operation: 'join', roomId: meetingId.value, streamId: streamId.value })
   })
 }
 
@@ -195,6 +237,7 @@ async function refreshRoom() {
 
 async function leaveMeeting() {
   await run(async () => {
+    clientLogger.info('meeting_leave', { component: 'meeting', operation: 'leave', roomId: meetingId.value, streamId: streamId.value })
     if (meetingId.value && streamId.value) {
       await api(`/room/${meetingId.value}/stream/${streamId.value}`, { method: 'DELETE' })
     }
@@ -213,6 +256,7 @@ async function run(action: () => Promise<void>) {
     await action()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '操作失败'
+    clientLogger.error('ui_action_failed', { component: 'meeting', operation: screen.value, roomId: meetingId.value, streamId: streamId.value, error: { kind: 'ui_action_failed', message: error instanceof Error ? error.message : '操作失败' } })
   } finally {
     loading.value = false
   }
