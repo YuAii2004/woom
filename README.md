@@ -114,11 +114,20 @@ npm run build
 docker compose config
 ```
 
-Playwright 回归测试引入后，使用以下命令运行：
+Playwright 回归测试覆盖 Chromium、Firefox、Chrome 和 Edge。使用以下命令运行全部本地项目：
 
 ```bash
 npm run test:e2e
 ```
+
+只运行某一个浏览器项目：
+
+```bash
+npx playwright test --project=chromium
+npx playwright test --project=firefox
+```
+
+GitHub Actions 会在 Windows、macOS、Linux 上分别运行 Chrome、Firefox 和 Edge，并在失败时上传测试报告。
 
 ## 相关文档
 

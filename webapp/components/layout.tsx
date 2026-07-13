@@ -108,7 +108,7 @@ export default function Layout(props: { meetingId: string }) {
   }, [])
 
   return (
-    <div className="flex flex-col justify-between" style={{ height: '100vh' }}>
+    <div className="flex flex-col justify-between" style={{ height: '100vh' }} data-testid="meeting-layout">
       <div></div>
 
       {enabledPresentation
@@ -139,7 +139,7 @@ export default function Layout(props: { meetingId: string }) {
           <DeviceBar streamId={localStreamId} />
 
           <section className="flex flex-col justify-center">
-            <button className="text-white bg-rose-600 hover:bg-rose-700 duration-1000 shadow-xl rounded-3xl w-18 h-10" onClick={() => callEnd()}>
+            <button aria-label="Leave meeting" data-testid="meeting-leave" className="text-white bg-rose-600 hover:bg-rose-700 duration-1000 shadow-xl rounded-3xl w-18 h-10" onClick={() => callEnd()}>
               <center>
                 <SvgEnd />
               </center>

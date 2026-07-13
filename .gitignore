@@ -7,3 +7,5 @@ node_modules
 dist
 dist-ssr
 *.local
+playwright-report/
+test-results/
