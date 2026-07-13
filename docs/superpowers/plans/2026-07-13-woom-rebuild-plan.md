@@ -82,23 +82,23 @@
 - 新增测试：`server/helper/redis_room_test.go`
 - 新增测试：`server/api/v1/helper_test.go`
 
-- [ ] **步骤 1：定义带版本的 Redis 表示**
+- [x] **步骤 1：定义带版本的 Redis 表示**
 
 使用 `__schema` 哈希字段，其 JSON 值为 `{"version":1,"encoding":"json"}`。继续使用原有房间哈希和字段名，把 `admin` 与流字段的值改为 JSON。
 
-- [ ] **步骤 2：实现 JSON 优先、Gob 回退的解码**
+- [x] **步骤 2：实现 JSON 优先、Gob 回退的解码**
 
 当 `__schema.version` 为 1 时解码 JSON；没有该字段时解码现有 Gob。JSON 和 Gob 都损坏时返回明确的类型化错误，不要静默返回空房间。
 
-- [ ] **步骤 3：实现惰性迁移**
+- [x] **步骤 3：实现惰性迁移**
 
 成功读取旧房间后，把管理员和流值写回 JSON，并增加 `__schema`。不删除原哈希，不改变房间 id，重复读取不得重复迁移。
 
-- [ ] **步骤 4：测试两种存储格式**
+- [x] **步骤 4：测试两种存储格式**
 
 覆盖全新 JSON 房间、旧 Gob 房间、混合格式房间、损坏值和迁移后的第二次读取。断言第二次读取不会再次写 Redis。
 
-- [ ] **步骤 5：验证存储迁移**
+- [x] **步骤 5：验证存储迁移**
 
 执行 `go test ./server/helper ./server/api/v1 ./server/model`，并使用 `redis-cli HGETALL` 查看临时房间。预期结果：迁移后的房间含有 `__schema` 和 JSON 值，接口响应保持不变。
 

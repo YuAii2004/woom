@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"net/http"
 	"woom/server/model"
 
@@ -56,7 +55,7 @@ func (h *Handler) DestroyRoomStream(w http.ResponseWriter, r *http.Request) {
 	roomId := chi.URLParam(r, "roomId")
 	streamId := chi.URLParam(r, "streamId")
 
-	if err := h.rdb.HDel(context.TODO(), roomId, streamId).Err(); err != nil {
+	if err := h.rdb.HDel(r.Context(), roomId, streamId).Err(); err != nil {
 		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "stream_deletion_failed", "无法离开会议")
 		return
 	}

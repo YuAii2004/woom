@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"context"
+	"fmt"
 	"net/http"
 
 	"woom/server/helper"
@@ -17,12 +17,12 @@ func (h *Handler) helperCreateStreamId() (string, error) {
 }
 
 func (h *Handler) helperSetRoomStream(r *http.Request, roomId, streamId string, stream *model.Stream) error {
-	gobStream, err := helper.GobEncode(stream)
+	jsonStream, err := helper.EncodeRoomValue(stream)
 	if err != nil {
 		return err
 	}
 
-	return h.rdb.HSet(context.TODO(), roomId, streamId, gobStream).Err()
+	return h.rdb.HSet(r.Context(), roomId, streamId, jsonStream, helper.RoomSchemaField, helper.RoomSchemaValue).Err()
 }
 
 func (h *Handler) helperShowRoom(r *http.Request) (*model.Room, error) {
@@ -31,21 +31,57 @@ func (h *Handler) helperShowRoom(r *http.Request) (*model.Room, error) {
 		RoomId:  roomId,
 		Streams: map[string]model.Stream{},
 	}
-	result, err := h.rdb.HGetAll(context.TODO(), roomId).Result()
+	result, err := h.rdb.HGetAll(r.Context(), roomId).Result()
 	if err != nil {
 		return &room, err
 	}
 
+	schemaPresent, _, err := helper.ReadRoomSchema(result[helper.RoomSchemaField])
+	if err != nil {
+		return &room, err
+	}
+	canonicalValues := make(map[string][]byte)
 	for k, v := range result {
+		if k == helper.RoomSchemaField {
+			continue
+		}
+
+		var target any
+		var stream model.Stream
 		if k == model.AdminUniqueKey {
-			admin := model.RoomAdmin{}
-			helper.GobDecode(&admin, []byte(v))
-			room.RoomAdmin = admin
+			target = &room.RoomAdmin
 		} else {
-			stream := model.Stream{}
-			helper.GobDecode(&stream, []byte(v))
+			target = &stream
+		}
+
+		if schemaPresent {
+			if err := helper.DecodeRoomJSONValue([]byte(v), target); err != nil {
+				return &room, fmt.Errorf("decode room field %q: %w", k, err)
+			}
+		} else {
+			if _, err := helper.DecodeRoomValue([]byte(v), target); err != nil {
+				return &room, fmt.Errorf("decode legacy room field %q: %w", k, err)
+			}
+			canonical, err := helper.EncodeRoomValue(target)
+			if err != nil {
+				return &room, fmt.Errorf("encode migrated room field %q: %w", k, err)
+			}
+			canonicalValues[k] = canonical
+		}
+		if k != model.AdminUniqueKey {
 			room.Streams[k] = stream
 		}
 	}
-	return &room, err
+
+	if !schemaPresent && len(canonicalValues) > 0 {
+		values := []any{helper.RoomSchemaField, helper.RoomSchemaValue}
+		for field, value := range canonicalValues {
+			values = append(values, field, value)
+		}
+		if err := h.rdb.HSet(r.Context(), roomId, values...).Err(); err != nil {
+			return &room, fmt.Errorf("migrate room %q: %w", roomId, err)
+		}
+	}
+
+	return &room, nil
 }

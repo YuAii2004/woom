@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"context"
 	"net/http"
 
 	woomMiddleware "woom/server/api/middleware"
@@ -26,12 +25,12 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		Presenter: "",
 		Locked:    false,
 	}
-	gobAdmin, err := helper.GobEncode(&admin)
+	jsonAdmin, err := helper.EncodeRoomValue(&admin)
 	if err != nil {
 		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "room_encoding_failed", "无法保存会议状态")
 		return
 	}
-	if err := h.rdb.HSet(context.TODO(), roomId, model.AdminUniqueKey, gobAdmin).Err(); err != nil {
+	if err := h.rdb.HSet(r.Context(), roomId, model.AdminUniqueKey, jsonAdmin, helper.RoomSchemaField, helper.RoomSchemaValue).Err(); err != nil {
 		woomMiddleware.WriteError(w, r, http.StatusInternalServerError, "room_persistence_failed", "无法创建会议")
 		return
 	}
