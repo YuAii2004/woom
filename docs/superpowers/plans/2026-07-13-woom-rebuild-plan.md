@@ -202,11 +202,11 @@
 
 只读写版本 1 的 JSON 值。匹配 Go 的房间 id、流 id、状态和 HTTP 响应行为。使用可取消的 Tokio 操作，并把 Redis 错误映射为稳定的 503/500 响应。
 
-- [ ] **步骤 5：实现 Live777 代理和静态文件服务**
+- [x] **步骤 5：实现 Live777 代理和静态文件服务**
 
 转发 `/whip/{uuid}` 和 `/whep/{uuid}`，设置可选的 Bearer token，保留请求方法和请求体，并在发布模式下由同一个二进制提供 Vue 构建目录。
 
-- [ ] **步骤 6：执行 Go/Rust 契约对照**
+- [x] **步骤 6：执行 Go/Rust 契约对照**
 
 把同一组固定请求分别发送到 Go 的 4000 端口和 Rust 的 4001 端口，比较状态码和解码后的 JSON 字段，然后执行 `cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test`。
 

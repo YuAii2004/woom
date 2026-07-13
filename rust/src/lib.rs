@@ -17,8 +17,10 @@ use std::{
     collections::HashMap,
     env,
     sync::Arc,
+    time::Instant,
     time::{SystemTime, UNIX_EPOCH},
 };
+use tower_http::services::{ServeDir, ServeFile};
 use uuid::Uuid;
 
 const ROOM_SCHEMA_FIELD: &str = "__schema";
@@ -97,10 +99,12 @@ pub mod model {
         #[serde(rename = "roomId")]
         pub room_id: String,
         pub owner: String,
+        #[serde(skip_serializing_if = "String::is_empty")]
         pub presenter: String,
         pub locked: bool,
-        #[serde(rename = "streamId")]
+        #[serde(rename = "streamId", skip_serializing_if = "String::is_empty")]
         pub stream_id: String,
+        #[serde(skip_serializing_if = "HashMap::is_empty")]
         pub streams: HashMap<String, Stream>,
     }
 
@@ -177,6 +181,9 @@ impl IntoResponse for AppError {
 }
 
 async fn request_id(mut request: Request, next: Next) -> Response {
+    let started = Instant::now();
+    let method = request.method().to_string();
+    let path = request.uri().path().to_string();
     let id = request
         .headers()
         .get("x-request-id")
@@ -187,6 +194,20 @@ async fn request_id(mut request: Request, next: Next) -> Response {
     request.headers_mut().insert("x-request-id", id.clone());
     let mut response = next.run(request).await;
     response.headers_mut().insert("x-request-id", id);
+    println!(
+        "{}",
+        serde_json::json!({
+            "logged_at": SystemTime::now().duration_since(UNIX_EPOCH).map(|value| value.as_millis()).unwrap_or_default(),
+            "level": "info",
+            "service": "woom-rust",
+            "event": "http_request",
+            "component": "http",
+            "operation": format!("{method} {path}"),
+            "request_id": response.headers().get("x-request-id").and_then(|value| value.to_str().ok()).unwrap_or_default(),
+            "status": response.status().as_u16(),
+            "duration_ms": started.elapsed().as_millis()
+        })
+    );
     response
 }
 
@@ -554,6 +575,10 @@ pub mod app {
             .route("/whip/{uuid}", post(super::whip))
             .route("/whep/{uuid}", post(super::whep))
             .layer(middleware::from_fn(super::request_id))
+            .fallback_service(
+                ServeDir::new("static/dist-vue")
+                    .fallback(ServeFile::new("static/dist-vue/index.html")),
+            )
             .with_state(state)
     }
 
