@@ -2,6 +2,7 @@ woom
 .idea
 .vscode
 node_modules
+.worktrees/
 .DS_Store
 dist
 dist-ssr
