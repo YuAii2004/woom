@@ -3,7 +3,7 @@ NAME=woom
 RUSTBUILD=cargo build --release --manifest-path rust/Cargo.toml
 
 .PHONY: default
-default: webapp rust-build
+default: frontend rust-build
 
 .PHONY: build
 build: rust-build
@@ -17,16 +17,16 @@ rust-build:
 build-go-fallback:
 	CGO_ENABLED=0 go build -tags release -trimpath -o $(NAME)-go
 
-.PHONY: webapp
-webapp:
+.PHONY: frontend
+frontend:
 	npm run build
 
-.PHONY: webapp-clean
-webapp-clean:
+.PHONY: frontend-clean
+frontend-clean:
 	rm -r static/dist
 
 .PHONY: clean
-clean: webapp-clean
+clean: frontend-clean
 	cargo clean --manifest-path rust/Cargo.toml
 	go clean -cache
 

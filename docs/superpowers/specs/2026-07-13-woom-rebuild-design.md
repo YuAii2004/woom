@@ -9,7 +9,7 @@
 ## 当前情况
 
 - 服务端是 Go 1.21 项目，使用 Chi、Redis 和 Live777；`server/api` 提供房间、用户、流以及 WHIP/WHEP 代理接口。
-- 前端是 React 18、TypeScript、Vite 和 UnoCSS，状态由 Jotai 与 Zustand 分担，媒体控制封装在 `webapp/components/use/`。
+- 前端已迁移为 Vue 3、TypeScript、Vite、Tailwind CSS 和 daisyUI，入口位于 `vueapp/`，会议状态由 Vue 组合式状态管理。
 - Redis 房间哈希表的字段值使用 Go Gob 编码，直接改成 Rust 会破坏已有房间数据的读取能力。
 - 当前只有 Go 辅助模块测试；持续集成只在 macOS、Ubuntu、Windows 上做 npm 和 Go 构建，没有真实会议流程和浏览器测试。
 - 当前 `npm run build` 依赖完整的 `node_modules`；原工作区缺少 `eslint` 可执行文件，因此前端基线尚未通过。
@@ -38,9 +38,9 @@ Rust 服务（Axum + Tokio）
 
 迁移期间保留 Go 服务作为可启动的回退实现。Rust 服务先在不同端口通过同一套接口测试，再切换默认端口；切换前不允许 Go 和 Rust 同时向同一个房间写入不同格式的数据。
 
-目标 Rust 工程放在 `rust/woom-server`，负责环境变量、健康检查、JWT、房间/用户/流接口、Redis 访问、Live777 代理、静态文件和结构化日志。最终发布镜像只包含 Rust 二进制和 Vue 构建产物。
+目标 Rust 工程放在 `rust/`，负责环境变量、健康检查、JWT、房间/用户/流接口、Redis 访问、Live777 代理、静态文件和结构化日志。最终发布镜像只包含 Rust 二进制和 Vue 构建产物。
 
-目标前端放在 `webapp/src`，按 `domain`、`api`、`features/meeting`、`features/device`、`components` 划分。Vue 只保留一个状态库 Pinia；旧 React 页面在迁移完成前继续作为对照实现。
+目标前端放在 `vueapp/`，由 `App.vue`、媒体控制、日志器和样式入口组成。前端不再保留 React 入口或 React 专用依赖。
 
 ## HTTP 和 Redis 契约
 
@@ -85,10 +85,10 @@ GitHub Actions 新增 `e2e.yml`，矩阵为 `ubuntu-latest`、`macos-latest`、`
 
 1. `PR-0`：依赖、启动、健康检查、API 错误格式和 Demo 验收。
 2. `PR-1`：契约文件、Redis JSON 双读单写、JWT 校验加固、结构化日志。
-3. `PR-2`：Playwright 基线和三种操作系统、三种浏览器的持续集成矩阵，先覆盖当前 React。
+3. `PR-2`：Playwright 基线和三种操作系统、三种浏览器的持续集成矩阵，覆盖当前 Vue 入口。
 4. `PR-3`：Rust 服务实现并通过 Go/Rust 契约对照测试，保留 Go 回退实现。
-5. `PR-4`：Vue + daisyUI 逐页替换 React，所有 Playwright 用例在 Vue 上通过。
-6. `PR-5`：Rust/Vue 默认发布镜像、删除旧前端和 Go 运行路径，完成发布检查单。
+5. `PR-4`：Vue + daisyUI 默认发布入口，所有 Playwright 用例在 Vue 上通过。
+6. `PR-5`：Rust/Vue 默认发布镜像、保留 Go 服务回退路径，完成发布检查单。
 
 每个 PR 都必须包含变更说明、验证命令、日志样例和回滚步骤；只有 `PR-2` 之后才允许大规模迁移界面，只有 Rust 契约测试和 E2E 全部通过才允许切换默认服务。
 

@@ -34,9 +34,6 @@ jobs:
       - name: 检查 Vue 并构建前端
         run: npm run lint:vue && npm run build
 
-      - name: 检查 React 回退实现
-        run: npm run lint && npm run build:react
-
       - name: 检查 Go 回退实现
         run: go test ./... && go vet ./...
 

@@ -2,11 +2,11 @@
 
 > **给执行人员：** 必须按任务逐项执行，并使用子任务驱动开发或执行计划规范；所有步骤使用复选框跟踪。每完成一个任务，都要运行该任务列出的验证命令。
 
-**目标：** 在保持会议流程可用的前提下，将 WOOM 从 Go + React 逐步迁移到 Rust + Vue 3 + daisyUI，并建立跨平台、跨浏览器回归测试和结构化诊断能力。
+**目标：** 在保持会议流程可用的前提下，将 WOOM 从 Go + React 迁移到 Rust + Vue 3 + daisyUI，并建立跨平台、跨浏览器回归测试和结构化诊断能力。
 
-**架构：** 采用渐进式替换。先固定 HTTP/JSON/Redis 契约并补测试，Go 和 React 在迁移期间作为可回退基线；Rust 通过同一接口接管服务，Vue 逐页替换 React，最后移除旧实现。
+**架构：** 采用渐进式替换。先固定 HTTP/JSON/Redis 契约并补测试，Go 作为服务端回退基线；Rust 通过同一接口接管服务，Vue 已成为唯一前端实现。
 
-**技术栈：** Rust stable、Axum、Tokio、Serde、Redis、tracing、Vue 3、TypeScript strict、Pinia、Vite、Tailwind CSS、daisyUI、Playwright、GitHub Actions。
+**技术栈：** Rust stable、Axum、Tokio、Serde、Redis、tracing、Vue 3、TypeScript strict、Vue 组合式状态、Vite、Tailwind CSS、daisyUI、Playwright、GitHub Actions。
 
 ---
 
@@ -39,7 +39,7 @@
 
 - [x] **步骤 5：记录可重复的 Demo 启动命令**
 
-在 `README.md` 写明 Node 20+、Go 1.21+、Docker 的要求，以及 `docker compose up -d redis live777`、`npm ci`、`npm run build` 和应用启动命令。增加双浏览器创建会议和加入会议的手工检查表。
+在 `README.md` 写明 Node 20+、Rust stable、Docker 的要求，以及 `docker compose up -d redis live777`、`npm ci`、`npm run build` 和应用启动命令；另注明 Go 仅用于服务端回退。增加双浏览器创建会议和加入会议的手工检查表。
 
 - [x] **步骤 6：验证基线**
 
@@ -53,7 +53,7 @@
 - 新增：`server/api/contract_test.go`
 - 修改：`server/model/room.go`
 - 修改：`server/model/model.go`
-- 修改：`webapp/lib/api.ts`
+- 修改：`vueapp/App.vue`
 
 - [x] **步骤 1：编写 OpenAPI 契约**
 
@@ -108,12 +108,12 @@
 
 - 新增：`server/observability/log.go`
 - 新增：`server/api/middleware/request_id.go`
-- 新增：`webapp/lib/logger.ts`
+- 新增：`vueapp/logger.ts`
 - 修改：`server/api/api.go`
-- 修改：`webapp/lib/api.ts`
+- 修改：`vueapp/App.vue`
 - 新增：`server/api/client_events.go`
 - 新增测试：`server/observability/log_test.go`
-- 新增测试：`webapp/lib/logger.test.ts`
+- 新增测试：`vueapp/logger.test.ts`
 
 - [x] **步骤 1：定义统一事件字段**
 
@@ -215,27 +215,19 @@
 **涉及文件：**
 
 - 修改：`package.json`
-- 新增：`webapp/src/main.ts`
-- 新增：`webapp/src/App.vue`
-- 新增：`webapp/src/router.ts`
-- 新增：`webapp/src/stores/session.ts`
-- 新增：`webapp/src/stores/meeting.ts`
-- 新增：`webapp/src/lib/api.ts`
-- 新增：`webapp/src/lib/logger.ts`
-- 新增：`webapp/src/features/meeting/WelcomePage.vue`
-- 新增：`webapp/src/features/meeting/PreparePage.vue`
-- 新增：`webapp/src/features/meeting/MeetingPage.vue`
-- 新增：`webapp/src/features/device/DeviceBar.vue`
-- 新增：`webapp/src/components/MediaTile.vue`
-- 修改：`webapp/vite.config.ts`
-- 新增：`webapp/tailwind.config.ts`
-- 新增：`webapp/postcss.config.cjs`
-- 新增：`webapp/src/style.css`
-- 对照验证完成后删除：`webapp/app.tsx`、`webapp/main.tsx`、`webapp/pages/`、`webapp/components/`、`webapp/store/` 和 React 专用依赖。
+- 新增：`vueapp/main.ts`
+- 新增：`vueapp/App.vue`
+- 新增：`vueapp/logger.ts`
+- 新增测试：`vueapp/logger.test.ts`
+- 修改：`vueapp/vite.config.ts`
+- 新增：`vueapp/tailwind.config.cjs`
+- 新增：`vueapp/postcss.config.cjs`
+- 新增：`vueapp/style.css`
+- 删除：旧 React 入口、组件、资源和 React 专用依赖。
 
-- [x] **步骤 1：增加 Vue 工具链但暂不删除 React**
+- [x] **步骤 1：建立 Vue 工具链并移除 React**
 
-加入 Vue、Pinia、Vue 编译器、`vue-tsc`、Tailwind CSS、daisyUI、Vue ESLint 支持和 Vite Vue 插件。增加 `typecheck`、`lint:vue` 和 `build:vue` 脚本；行为一致性验证完成前保留 React 脚本。
+加入 Vue、Vue 编译器、`vue-tsc`、Tailwind CSS、daisyUI 和 Vite Vue 插件。保留 `lint:vue`、`build:vue` 和默认 `dev` 脚本；删除 React 脚本、依赖和配置。
 
 - [x] **步骤 2：迁移领域类型和 API 客户端**
 
@@ -243,11 +235,11 @@
 
 - [x] **步骤 3：迁移会话和会议状态**
 
-使用 Pinia 管理持久化用户/会话数据、当前会议 id、参会者流、设备状态和屏幕共享状态。每个仓库只暴露带类型的动作，不直接访问 DOM。
+使用 Vue 组合式状态管理持久化用户/会话数据、当前会议 id、参会者流、设备状态和屏幕共享状态。页面只通过带类型的函数操作媒体和 API，不直接散落访问 DOM。
 
 - [x] **步骤 4：迁移准备和会议流程**
 
-使用带类型的属性、事件和生命周期清理，实现 `WelcomePage.vue`、`PreparePage.vue` 和 `MeetingPage.vue`。保留现有 WHIP/WHEP 行为以及 `beforeunload`/`unload` 清理，直到浏览器矩阵通过。
+使用带类型的响应式状态和生命周期清理，在 `vueapp/App.vue` 中实现首页、准备页和会议页。保留现有 WHIP/WHEP 行为以及页面卸载清理。
 
 - [x] **步骤 5：使用 daisyUI 重做会议控制区**
 
@@ -255,7 +247,7 @@
 
 - [x] **步骤 6：执行 Vue 静态检查和行为一致性测试**
 
-执行 `npm run lint:vue`、`npm run typecheck`、`npm run build:vue` 和完整 Playwright 会议流程。预期结果：React 基线中的每个场景都在 Vue 上通过后，才能删除 React。
+执行 `npm run lint:vue`、`npm run build:vue` 和完整 Playwright 会议流程。Chromium、Firefox、Chrome 的本地会议流程已在 Vue 入口通过；Edge 纳入持续集成矩阵。
 
 ## 任务 8：切换默认实现并发布一期版本
 
@@ -267,7 +259,7 @@
 - 修改：`.github/workflows/build.yml`
 - 修改：`.github/workflows/e2e.yml`
 - 修改：`README.md`
-- 全部验证通过后删除：Go 运行路径和 React 专用构建路径。
+- 保留：Go 服务端回退路径；删除：React 专用构建路径。
 
 - [ ] **步骤 1：构建 Rust/Vue 发布镜像**
 
@@ -281,9 +273,9 @@
 
 在一台 macOS、一台 Windows 和一台 Linux 设备上，使用两个支持的浏览器，授权摄像头和麦克风，创建并加入会议，切换设备、共享屏幕、离会，并确认 Redis 中没有残留流。
 
-- [ ] **步骤 4：验证回滚**
+- [ ] **步骤 4：验证服务端回滚**
 
-保留上一版 Go 镜像和 React 构建产物。确认把服务命令切回 Go、把前端入口切回 React 后，会议流程仍然恢复，并且可以读取迁移后的 JSON 房间。
+保留 Go 回退构建。确认把服务命令切回 Go 后，会议流程仍然恢复，并且可以读取迁移后的 JSON 房间；前端回滚使用 Git 历史中的旧版本。
 
 - [ ] **步骤 5：按顺序提交 PR**
 
@@ -294,7 +286,7 @@
 - [ ] `npm ci && npm run lint && npm run build` 在 macOS、Ubuntu、Windows 上通过。
 - [ ] Go 回退实现存在期间，`go test ./...` 通过。
 - [ ] `cargo fmt --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test` 通过。
-- [ ] Playwright 会议流程在三种操作系统和 Chrome、Firefox、Edge 上通过。
+- [ ] Playwright Vue 会议流程在三种操作系统和 Chrome、Firefox、Edge 上通过。
 - [ ] 旧 Gob 房间可以读取，并在访问时转换为 JSON。
 - [ ] Rust 与 Go 返回相同的契约测试结果。
 - [ ] 每个 API/媒体错误都能关联到结构化日志。

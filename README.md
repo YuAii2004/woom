@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="./webapp/public/logo.svg" alt="WOOM" width="200">
+  <img src="./vueapp/public/logo.svg" alt="WOOM" width="200">
   <br>WOOM<br>
 </h1>
 
@@ -17,14 +17,14 @@ WOOM 是一个轻量、可自托管的会议服务，媒体能力使用 [Live777
 
 ## 当前状态
 
-当前默认入口使用 Go 服务端和 Vue 3、TypeScript、daisyUI 前端。Rust 服务端和 React 前端仍保留为可回退实现，确保迁移期间会议流程持续可用。
+当前默认入口使用 Rust 服务端和 Vue 3、TypeScript、daisyUI 前端。Go 服务端仅作为服务端回退实现保留；前端已统一为 Vue。
 
 一期目标是支持 2～10 人通过链接加入会议，并完成摄像头、麦克风、设备切换、屏幕共享和离会。
 
 ## 环境要求
 
 - Node.js 20 或更高版本
-- Go 1.21 或更高版本
+- Rust stable
 - Docker Desktop 或其他支持 Docker Compose 的 Docker 环境
 
 ## 本地运行 Demo
@@ -76,7 +76,7 @@ npm run dev
 
 ## 发布构建
 
-构建前端并编译 Go 服务：
+构建 Vue 前端并编译 Rust 服务：
 
 ```bash
 make
@@ -86,18 +86,10 @@ make
 
 ```bash
 npm run build
-go build -tags release -trimpath -o woom
+cargo build --release --manifest-path rust/Cargo.toml
 ```
 
-默认入口已经是 Vue 和 daisyUI。React 回退入口使用以下命令：
-
-```bash
-npm run dev:react
-npm run build:react
-npm run test:e2e:vue
-```
-
-Vue 开发服务默认使用 5173 端口；`npm run dev:vue` 和 `npm run build:vue` 是对应的显式别名。
+默认入口已经是 Rust、Vue 和 daisyUI。Vue 开发服务默认使用 5173 端口；`npm run dev:vue` 和 `npm run build:vue` 是对应的显式别名。
 
 构建 Docker 镜像：
 
@@ -124,7 +116,7 @@ docker run --rm --name woom --network woom \
 ## 常用检查命令
 
 ```bash
-go test ./...
+npm run test:unit
 npm run lint
 npm run build
 docker compose config
