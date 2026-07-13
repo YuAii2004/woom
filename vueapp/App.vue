@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { WHIPClient } from 'whip-whep/whip'
+import { WHEPClient } from 'whip-whep/whep'
 
 type Screen = 'home' | 'prepare' | 'meeting'
 type StreamState = 'new' | 'signaled' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed'
@@ -34,9 +36,15 @@ const mediaStream = ref<MediaStream | null>(null)
 const room = ref<Room | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
+const remoteMediaVersion = ref(0)
+let publisher: { client: WHIPClient, pc: RTCPeerConnection } | undefined
+const remoteMedia = new Map<string, { client: WHEPClient, pc: RTCPeerConnection, stream: MediaStream }>()
 let refreshTimer: number | undefined
 
-const remoteStreams = computed(() => Object.entries(room.value?.streams || {}).filter(([id]) => id !== streamId.value))
+const remoteStreams = computed(() => {
+  remoteMediaVersion.value
+  return Object.entries(room.value?.streams || {}).filter(([id]) => id !== streamId.value)
+})
 
 async function ensureUser() {
   if (token.value && streamId.value) return
@@ -83,16 +91,83 @@ async function joinMeeting() {
 
 async function prepareMedia() {
   if (mediaStream.value) return
-  mediaStream.value = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+  try {
+    mediaStream.value = await withTimeout(navigator.mediaDevices.getUserMedia({ audio: true, video: true }), 5_000)
+  } catch {
+    mediaStream.value = new MediaStream()
+  }
 }
 
 function setVideoStream(element: unknown) {
   if (element instanceof HTMLVideoElement && mediaStream.value) element.srcObject = mediaStream.value
 }
 
+function setRemoteVideoStream(element: unknown, id: string) {
+  if (element instanceof HTMLVideoElement) element.srcObject = remoteMedia.get(id)?.stream || null
+}
+
+async function withTimeout<T>(promise: Promise<T>, milliseconds: number) {
+  let timer: number | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = window.setTimeout(() => reject(new Error('媒体连接超时')), milliseconds)
+  })
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timer) window.clearTimeout(timer)
+  }
+}
+
+async function publishMedia() {
+  if (!mediaStream.value || publisher) return
+  const pc = new RTCPeerConnection()
+  mediaStream.value.getTracks().forEach(track => pc.addTrack(track, mediaStream.value as MediaStream))
+  const client = new WHIPClient()
+  try {
+    await withTimeout(client.publish(pc, `${location.origin}/whip/${streamId.value}`, token.value), 10_000)
+    publisher = { client, pc }
+  } catch (error) {
+    pc.close()
+    throw error
+  }
+}
+
+async function subscribeMedia(id: string) {
+  if (remoteMedia.has(id)) return
+  const pc = new RTCPeerConnection()
+  pc.addTransceiver('video', { direction: 'recvonly' })
+  pc.addTransceiver('audio', { direction: 'recvonly' })
+  const stream = new MediaStream()
+  pc.ontrack = event => {
+    stream.addTrack(event.track)
+    remoteMediaVersion.value += 1
+  }
+  const client = new WHEPClient()
+  try {
+    await withTimeout(client.view(pc, `${location.origin}/whep/${id}`), 10_000)
+    remoteMedia.set(id, { client, pc, stream })
+    remoteMediaVersion.value += 1
+  } catch {
+    pc.close()
+  }
+}
+
+function closeMedia() {
+  publisher?.client.stop().catch(() => undefined)
+  publisher?.pc.close()
+  publisher = undefined
+  for (const media of remoteMedia.values()) {
+    media.client.stop().catch(() => undefined)
+    media.pc.close()
+  }
+  remoteMedia.clear()
+  remoteMediaVersion.value += 1
+}
+
 async function joinRoom() {
   await run(async () => {
     await prepareMedia()
+    void publishMedia().catch(() => undefined)
     await api<Room>(`/room/${meetingId.value}/stream/${streamId.value}`, {
       method: 'PATCH',
       body: JSON.stringify({
@@ -111,6 +186,11 @@ async function joinRoom() {
 async function refreshRoom() {
   if (!meetingId.value || !token.value) return
   room.value = await api<Room>(`/room/${meetingId.value}`)
+  const ids = new Set(remoteStreams.value.map(([id]) => id))
+  for (const id of ids) void subscribeMedia(id)
+  for (const id of remoteMedia.keys()) {
+    if (!ids.has(id)) remoteMedia.delete(id)
+  }
 }
 
 async function leaveMeeting() {
@@ -118,6 +198,7 @@ async function leaveMeeting() {
     if (meetingId.value && streamId.value) {
       await api(`/room/${meetingId.value}/stream/${streamId.value}`, { method: 'DELETE' })
     }
+    closeMedia()
     mediaStream.value?.getTracks().forEach(track => track.stop())
     mediaStream.value = null
     screen.value = 'home'
@@ -160,7 +241,7 @@ onBeforeUnmount(() => {
           <p class="text-sm uppercase tracking-[0.2em] text-primary">WOOM</p>
           <h1 class="text-3xl font-bold">轻量会议</h1>
         </div>
-        <div v-if="screen === 'meeting'" class="badge badge-outline">{{ meetingId }}</div>
+        <div v-if="screen === 'meeting'" id="meeting-id" class="badge badge-outline">{{ meetingId }}</div>
       </header>
 
       <div v-if="errorMessage" role="alert" class="alert alert-error mb-4">
@@ -209,7 +290,8 @@ onBeforeUnmount(() => {
           </article>
           <article v-for="[id, participant] in remoteStreams" :key="id" class="card border border-base-300 bg-base-100 shadow-lg">
             <div class="card-body p-4">
-              <div class="flex aspect-video items-center justify-center rounded-box bg-neutral text-neutral-content">等待媒体</div>
+              <video v-if="remoteMedia.get(id)" :ref="element => setRemoteVideoStream(element, id)" autoplay playsinline class="w-full rounded-box bg-black" />
+              <div v-else class="flex aspect-video items-center justify-center rounded-box bg-neutral text-neutral-content">等待媒体</div>
               <div class="mt-2 flex items-center justify-between"><span>{{ participant.name || id }}</span><span class="badge badge-ghost">{{ participant.state }}</span></div>
             </div>
           </article>

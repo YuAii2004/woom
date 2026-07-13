@@ -576,8 +576,8 @@ pub mod app {
             .route("/whep/{uuid}", post(super::whep))
             .layer(middleware::from_fn(super::request_id))
             .fallback_service(
-                ServeDir::new("static/dist-vue")
-                    .fallback(ServeFile::new("static/dist-vue/index.html")),
+                ServeDir::new("static/dist")
+                    .fallback(ServeFile::new("static/dist/index.html")),
             )
             .with_state(state)
     }

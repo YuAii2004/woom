@@ -14,7 +14,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: fileURLToPath(new URL('../static/dist-vue', import.meta.url)),
+    outDir: fileURLToPath(new URL('../static/dist', import.meta.url)),
     emptyOutDir: true
   }
 })

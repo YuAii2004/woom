@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: './tests/e2e-vue',
   use: {
     baseURL: 'http://127.0.0.1:5174',
+    testIdAttribute: 'data-test-id',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'
   },

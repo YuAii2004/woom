@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite -c webapp/vite.config.ts",
+    "dev": "vite -c vueapp/vite.config.ts",
+    "dev:react": "vite -c webapp/vite.config.ts",
     "dev:vue": "vite -c vueapp/vite.config.ts",
     "dev-refresh": "cross-env USE_REFRESH=true npm run dev",
     "lint": "eslint && tsc --noEmit",
@@ -12,8 +13,9 @@
     "test:e2e:vue": "playwright test -c vue-playwright.config.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "build": "npm run lint && vite build -c webapp/vite.config.ts",
-    "build:vue": "npm run lint:vue && vite build -c vueapp/vite.config.ts",
+    "build": "npm run lint:vue && vite build -c vueapp/vite.config.ts",
+    "build:react": "npm run lint && vite build -c webapp/vite.config.ts",
+    "build:vue": "npm run build",
     "lint:vue": "vue-tsc --noEmit -p tsconfig.vue.json",
     "build-refresh": "npm run lint && cross-env USE_REFRESH=true npm run build",
     "preview": "vite preview -c webapp/vite.config.ts"

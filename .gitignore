@@ -6,7 +6,7 @@ node_modules
 .DS_Store
 dist
 dist-ssr
-static/dist-vue/
+static/dist-react/
 *.local
 playwright-report/
 test-results/

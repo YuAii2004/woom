@@ -24,7 +24,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: path.resolve(ProjectRoot, 'static/dist'),
+    outDir: path.resolve(ProjectRoot, 'static/dist-react'),
     emptyOutDir: true
   },
   plugins: [

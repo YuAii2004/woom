@@ -17,7 +17,7 @@ WOOM 是一个轻量、可自托管的会议服务，媒体能力使用 [Live777
 
 ## 当前状态
 
-当前版本使用 Go 服务端和 React 前端。重构计划是逐步迁移到 Rust、Vue 3、TypeScript 和 daisyUI；迁移期间会保留可回退实现，确保会议流程持续可用。
+当前默认入口使用 Go 服务端和 Vue 3、TypeScript、daisyUI 前端。Rust 服务端和 React 前端仍保留为可回退实现，确保迁移期间会议流程持续可用。
 
 一期目标是支持 2～10 人通过链接加入会议，并完成摄像头、麦克风、设备切换、屏幕共享和离会。
 
@@ -55,7 +55,7 @@ go run .
 
 服务端默认监听 `http://localhost:4000`。
 
-### 4. 启动前端开发服务
+### 4. 启动 Vue 前端开发服务
 
 在另一个终端执行：
 
@@ -89,15 +89,15 @@ npm run build
 go build -tags release -trimpath -o woom
 ```
 
-Vue 和 daisyUI 迁移入口目前以旁路方式提供：
+默认入口已经是 Vue 和 daisyUI。React 回退入口使用以下命令：
 
 ```bash
-npm run dev:vue
-npm run build:vue
+npm run dev:react
+npm run build:react
 npm run test:e2e:vue
 ```
 
-Vue 开发服务默认使用 5173 端口；如果 React Demo 正在运行，请用 `npm run dev:vue -- --port 5174` 启动并打开 5174 端口。
+Vue 开发服务默认使用 5173 端口；`npm run dev:vue` 和 `npm run build:vue` 是对应的显式别名。
 
 构建 Docker 镜像：
 
