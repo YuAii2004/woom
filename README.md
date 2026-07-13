@@ -45,15 +45,15 @@ Redis 默认监听 `localhost:6379`，Live777 默认监听 `localhost:7777`。
 npm ci
 ```
 
-### 3. 启动 Go 服务端
+### 3. 启动 Rust 服务端
 
 在一个终端执行：
 
 ```bash
-go run .
+cargo run --manifest-path rust/Cargo.toml
 ```
 
-服务端默认监听 `http://localhost:4000`。
+Rust 服务端默认监听 `http://localhost:4000`。Go 回退服务可以使用 `PORT=4001 go run .` 启动。
 
 ### 4. 启动 Vue 前端开发服务
 
@@ -105,6 +105,12 @@ Vue 开发服务默认使用 5173 端口；`npm run dev:vue` 和 `npm run build:
 docker build -t woom .
 ```
 
+Compose 会同时启动 Rust/Vue 应用、Redis 和 Live777：
+
+```bash
+docker compose up -d
+```
+
 如果使用 Compose 创建的 `woom` 网络运行镜像：
 
 ```bash
@@ -122,6 +128,8 @@ go test ./...
 npm run lint
 npm run build
 docker compose config
+cargo fmt --manifest-path rust/Cargo.toml -- --check
+cargo test --manifest-path rust/Cargo.toml
 ```
 
 Playwright 回归测试覆盖 Chromium、Firefox、Chrome 和 Edge。使用以下命令运行全部本地项目：

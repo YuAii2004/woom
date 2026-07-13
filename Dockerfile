@@ -1,34 +1,31 @@
-FROM node:20-alpine as builder-node
+FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
 RUN npm run build
 
-FROM golang:1.21-alpine AS builder
+FROM rust:1.91-alpine AS rust-builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+RUN apk add --no-cache build-base
 
-RUN go mod download
+COPY rust/Cargo.toml rust/Cargo.lock rust/
+COPY rust/src rust/src
 
-COPY . .
+RUN cargo build --release --manifest-path rust/Cargo.toml
 
-COPY --from=builder-node /app/static/dist /app/static/dist
+FROM alpine:3.21 AS runtime
 
-RUN go build -tags release -o woom
-
-# Bin
-FROM alpine AS bin
-
-COPY --from=builder /app/woom /usr/bin/woom
+COPY --from=rust-builder /app/rust/target/release/woom-server /usr/bin/woom-server
+COPY --from=frontend-builder /app/static/dist /app/static/dist
 
 EXPOSE 4000/tcp
 
-ENTRYPOINT ["/usr/bin/woom"]
+ENTRYPOINT ["/usr/bin/woom-server"]

@@ -19,7 +19,7 @@ export default defineConfig({
   }],
   webServer: [
     {
-      command: 'go run .',
+      command: 'cargo run --manifest-path rust/Cargo.toml',
       url: 'http://127.0.0.1:4000/healthz',
       reuseExistingServer: true,
       timeout: 120_000
