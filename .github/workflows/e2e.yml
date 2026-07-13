@@ -30,11 +30,6 @@ jobs:
         with:
           toolchain: stable
 
-      - name: 配置 Go 回退工具链
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-
       - name: 安装前端依赖
         run: npm ci
 

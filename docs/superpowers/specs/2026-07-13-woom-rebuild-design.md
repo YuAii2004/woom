@@ -8,17 +8,17 @@
 
 ## 当前情况
 
-- 服务端是 Go 1.21 项目，使用 Chi、Redis 和 Live777；`server/api` 提供房间、用户、流以及 WHIP/WHEP 代理接口。
+- 服务端使用 Rust、Axum、Redis 和 Live777；Rust 服务提供房间、用户、流以及 WHIP/WHEP 代理接口。
 - 前端已迁移为 Vue 3、TypeScript、Vite、Tailwind CSS 和 daisyUI，入口位于 `vueapp/`，会议状态由 Vue 组合式状态管理。
-- Redis 房间哈希表的字段值使用 Go Gob 编码，直接改成 Rust 会破坏已有房间数据的读取能力。
-- 当前只有 Go 辅助模块测试；持续集成只在 macOS、Ubuntu、Windows 上做 npm 和 Go 构建，没有真实会议流程和浏览器测试。
+- Redis 房间哈希表统一使用带版本的 JSON 编码，Rust 只读写当前 JSON 契约。
+- 持续集成执行 Rust、Vue 和 Playwright 检查，并覆盖 macOS、Ubuntu、Windows 与多浏览器组合。
 - 当前 `npm run build` 依赖完整的 `node_modules`；原工作区缺少 `eslint` 可执行文件，因此前端基线尚未通过。
 
 ## 设计原则
 
 1. 先建立可重复的 Demo 和回归基线，再做语言和框架迁移。
 2. 迁移期间保持 HTTP 路由、JSON 字段和 WebRTC 代理地址不变，使每个 PR 都能独立验证和回滚。
-3. 用带版本的 JSON 替代 Gob；Go 先兼容读取 Gob 并写出 JSON，Rust 只依赖 JSON。
+3. 使用带版本的 JSON 作为唯一 Redis 存储格式，避免运行时维护多种编码。
 4. 让编译器和静态检查提供清晰的 AI 修复反馈：Rust 使用严格的 Clippy 与编译检查，Vue 使用 TypeScript strict、`vue-tsc` 和 ESLint。
 5. 日志只记录可诊断的结构化元数据，不记录 JWT、SDP、ICE candidate、音视频内容和未经处理的设备隐私信息。
 
@@ -36,7 +36,7 @@ Rust 服务（Axum + Tokio）
       Redis              Live777
 ```
 
-迁移期间保留 Go 服务作为可启动的回退实现。Rust 服务先在不同端口通过同一套接口测试，再切换默认端口；切换前不允许 Go 和 Rust 同时向同一个房间写入不同格式的数据。
+Rust 服务是唯一可启动的服务端实现，默认监听 4000 端口，并由同一个二进制提供 API、媒体代理和发布后的 Vue 静态文件。
 
 目标 Rust 工程放在 `rust/`，负责环境变量、健康检查、JWT、房间/用户/流接口、Redis 访问、Live777 代理、静态文件和结构化日志。最终发布镜像只包含 Rust 二进制和 Vue 构建产物。
 
@@ -59,13 +59,13 @@ Redis 中每个房间继续使用一个哈希表，字段名继续使用 `admin`
 {"version":1,"encoding":"json"}
 ```
 
-Go 的读取顺序为 JSON、旧 Gob；读取旧 Gob 后立即以 JSON 回写。Go 的写入只写 JSON。Rust 只接受 `__schema.version == 1` 的 JSON。迁移期间不删除旧字段，不改变房间 id 生成规则；旧房间在第一次访问时完成惰性迁移。
+Rust 只接受 `__schema.version == 1` 的 JSON，并使用稳定的房间 id、流 id 和字段命名规则。
 
 ## 日志和诊断协议
 
 所有后端和前端事件使用同一组字段：`timestamp`、`level`、`service`、`event`、`component`、`operation`、`request_id`、`session_id`、`room_id`、`stream_id`、`browser`、`os`、`duration_ms`、`error` 和 `context`。
 
-- Go 使用 `log/slog`，Rust 使用 `tracing` 加 JSON 输出；两者都做到一行一个 JSON 事件。
+- Rust 使用 `tracing` 加 JSON 输出，做到一行一个 JSON 事件。
 - HTTP 中间件生成或透传 `X-Request-ID`，响应头回传该 id。
 - 前端日志器在开发控制台输出 JSON，在生产环境只上报 `error` 和 `warn`；`/client-events` 限制请求体为 16 KiB，并丢弃 token、SDP、ICE candidate、设备 label 和媒体数据。
 - API 错误统一包含 `status`、`code`、`message`、`requestId`，用户界面显示可读信息，日志保存完整诊断上下文。
@@ -75,8 +75,8 @@ Go 的读取顺序为 JSON、旧 Gob；读取旧 Gob 后立即以 JSON 回写。
 
 测试分三层：
 
-1. Go/Rust 单元和集成测试验证 JWT、Redis 编解码、房间状态转换、错误响应和代理配置。
-2. API 契约测试验证 Go 与 Rust 对同一 OpenAPI 响应的兼容性。
+1. Rust 单元和集成测试验证 JWT、Redis 编解码、房间状态转换、错误响应和代理配置。
+2. API 契约测试验证 Rust 对 OpenAPI 响应的兼容性。
 3. Playwright 验证浏览器真实行为：创建会议、通过链接加入、授权设备、切换设备、两名参会者看到彼此、屏幕共享和离会清理。
 
 GitHub Actions 新增 `e2e.yml`，矩阵为 `ubuntu-latest`、`macos-latest`、`windows-latest` 与 `chrome`、`firefox`、`msedge` 的组合。浏览器安装使用 Playwright 固定版本；Chrome 和 Edge 使用各自浏览器通道，Firefox 使用 Playwright Firefox。媒体测试使用虚拟媒体参数和固定测试视频，另保留真实摄像头与麦克风手工验收清单，因为持续集成无法证明真实硬件驱动质量。
@@ -84,11 +84,11 @@ GitHub Actions 新增 `e2e.yml`，矩阵为 `ubuntu-latest`、`macos-latest`、`
 ## PR 和发布顺序
 
 1. `PR-0`：依赖、启动、健康检查、API 错误格式和 Demo 验收。
-2. `PR-1`：契约文件、Redis JSON 双读单写、JWT 校验加固、结构化日志。
+2. `PR-1`：契约文件、Redis JSON 单一格式、JWT 校验加固、结构化日志。
 3. `PR-2`：Playwright 基线和三种操作系统、三种浏览器的持续集成矩阵，覆盖当前 Vue 入口。
-4. `PR-3`：Rust 服务实现并通过 Go/Rust 契约对照测试，保留 Go 回退实现。
+4. `PR-3`：Rust 服务实现并通过 OpenAPI 契约测试。
 5. `PR-4`：Vue + daisyUI 默认发布入口，所有 Playwright 用例在 Vue 上通过。
-6. `PR-5`：Rust/Vue 默认发布镜像、保留 Go 服务回退路径，完成发布检查单。
+6. `PR-5`：Rust/Vue 发布镜像和完整发布检查单。
 
 每个 PR 都必须包含变更说明、验证命令、日志样例和回滚步骤；只有 `PR-2` 之后才允许大规模迁移界面，只有 Rust 契约测试和 E2E 全部通过才允许切换默认服务。
 

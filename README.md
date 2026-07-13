@@ -17,7 +17,7 @@ WOOM 是一个轻量、可自托管的会议服务，媒体能力使用 [Live777
 
 ## 当前状态
 
-当前默认入口使用 Rust 服务端和 Vue 3、TypeScript、daisyUI 前端。Go 服务端仅作为服务端回退实现保留；前端已统一为 Vue。
+当前默认入口使用 Rust 服务端和 Vue 3、TypeScript、daisyUI 前端。Rust 是唯一服务端实现，前端已统一为 Vue。
 
 一期目标是支持 2～10 人通过链接加入会议，并完成摄像头、麦克风、设备切换、屏幕共享和离会。
 
@@ -53,7 +53,7 @@ npm ci
 cargo run --manifest-path rust/Cargo.toml
 ```
 
-Rust 服务端默认监听 `http://localhost:4000`。Go 回退服务可以使用 `PORT=4001 go run .` 启动。
+Rust 服务端默认监听 `http://localhost:4000`。
 
 ### 4. 启动 Vue 前端开发服务
 

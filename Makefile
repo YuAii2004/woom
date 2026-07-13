@@ -13,10 +13,6 @@ rust-build:
 	$(RUSTBUILD)
 	cp rust/target/release/woom-server $(NAME)
 
-.PHONY: build-go-fallback
-build-go-fallback:
-	CGO_ENABLED=0 go build -tags release -trimpath -o $(NAME)-go
-
 .PHONY: frontend
 frontend:
 	npm run build
@@ -28,7 +24,6 @@ frontend-clean:
 .PHONY: clean
 clean: frontend-clean
 	cargo clean --manifest-path rust/Cargo.toml
-	go clean -cache
 
 .PHONY: cli-redis
 cli-redis:

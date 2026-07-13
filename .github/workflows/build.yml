@@ -18,11 +18,6 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: 配置 Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-
       - name: 配置 Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -33,9 +28,6 @@ jobs:
 
       - name: 检查 Vue 并构建前端
         run: npm run lint:vue && npm run build
-
-      - name: 检查 Go 回退实现
-        run: go test ./... && go vet ./...
 
       - name: 检查 Rust 服务
         run: cargo fmt --manifest-path rust/Cargo.toml -- --check && cargo clippy --manifest-path rust/Cargo.toml --all-targets --all-features -- -D warnings && cargo test --manifest-path rust/Cargo.toml
