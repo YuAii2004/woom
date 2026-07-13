@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { event, Context, Data } from './whxp'
 import { StreamState, Stream } from '../../lib/api'
 import { WHEPClient } from 'whip-whep/whep'
+import { clientLogger } from '../../lib/logger'
 
 interface WHIPData extends Data {
   connStatus: string
@@ -68,9 +69,16 @@ class WHEPContext extends Context {
 
     try {
       const url = location.origin + `/whep/${id}`
+      clientLogger.info('whep_start', { component: 'media', operation: 'view', streamId: id })
       await client.view(pc, url)
+      clientLogger.info('whep_connected', { component: 'media', operation: 'view', streamId: id })
     } catch (e) {
-      console.log(e)
+      clientLogger.error('whep_failed', {
+        component: 'media',
+        operation: 'view',
+        streamId: id,
+        error: { kind: 'view_failed', message: e instanceof Error ? e.message : String(e) },
+      })
       userStatus.state = StreamState.Failed
       this.sync()
     }
@@ -86,12 +94,19 @@ class WHEPContext extends Context {
     try {
       await this.client.stop()
       this.pc.removeEventListener('connectionstatechange', this.onconnectionstatechange)
+      clientLogger.info('whep_stop', { component: 'media', operation: 'view', streamId: this.id })
     } catch (e) {
-      console.log(e)
+      clientLogger.error('whep_stop_failed', {
+        component: 'media',
+        operation: 'view',
+        streamId: this.id,
+        error: { kind: 'stop_failed', message: e instanceof Error ? e.message : String(e) },
+      })
     }
   }
 
   async restart() {
+    clientLogger.info('whep_restart', { component: 'media', operation: 'view', streamId: this.id })
     await this.stop()
     this.stream = new MediaStream()
     this.pc = new RTCPeerConnection()

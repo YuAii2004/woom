@@ -10,6 +10,7 @@ import {
   asyncGetVideoStream,
 } from '../../lib/device'
 import { VirtualBackgroundStream } from './imageSegmentation'
+import { clientLogger } from '../../lib/logger'
 
 interface WHIPData extends Data {
   setUserName: (name: string) => void,
@@ -209,9 +210,16 @@ class WHIPContext extends Context {
 
     try {
       const url = location.origin + `/whip/${id}`
+      clientLogger.info('whip_start', { component: 'media', operation: 'publish', streamId: id })
       await client.publish(pc, url, token)
+      clientLogger.info('whip_connected', { component: 'media', operation: 'publish', streamId: id })
     } catch (e) {
-      console.log(e)
+      clientLogger.error('whip_failed', {
+        component: 'media',
+        operation: 'publish',
+        streamId: id,
+        error: { kind: 'publish_failed', message: e instanceof Error ? e.message : String(e) },
+      })
       userStatus.state = StreamState.Failed
       this.syncUserStatus(userStatus)
       this.sync()
@@ -228,12 +236,19 @@ class WHIPContext extends Context {
     try {
       await this.client.stop()
       this.pc.removeEventListener('connectionstatechange', this.onconnectionstatechange)
+      clientLogger.info('whip_stop', { component: 'media', operation: 'publish', streamId: this.id })
     } catch (e) {
-      console.log(e)
+      clientLogger.error('whip_stop_failed', {
+        component: 'media',
+        operation: 'publish',
+        streamId: this.id,
+        error: { kind: 'stop_failed', message: e instanceof Error ? e.message : String(e) },
+      })
     }
   }
 
   async restart() {
+    clientLogger.info('whip_restart', { component: 'media', operation: 'publish', streamId: this.id })
     await this.stop()
     this.pc = new RTCPeerConnection()
     await this.start()

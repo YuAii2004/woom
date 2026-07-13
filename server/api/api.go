@@ -4,14 +4,15 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 
 	woomMiddleware "woom/server/api/middleware"
 	v1 "woom/server/api/v1"
 	"woom/server/helper"
+	"woom/server/observability"
 	"woom/static"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -37,7 +38,8 @@ func NewApi(rdb *redis.Client, secret string, live777Url string, live777Token st
 
 	r := chi.NewRouter()
 	r.Use(woomMiddleware.RequestID)
-	r.Use(middleware.Logger)
+	logger := observability.NewLogger(os.Stdout)
+	r.Use(observability.RequestLogger(logger))
 
 	handle := v1.NewHandler(rdb, secret)
 
@@ -55,6 +57,7 @@ func NewApi(rdb *redis.Client, secret string, live777Url string, live777Token st
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
+	r.Post("/client-events", clientEventsHandler(logger))
 
 	r.Group(func(r chi.Router) {
 		r.Use(woomMiddleware.JWTAuth(secret))

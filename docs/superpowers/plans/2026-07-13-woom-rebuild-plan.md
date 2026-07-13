@@ -115,27 +115,27 @@
 - 新增测试：`server/observability/log_test.go`
 - 新增测试：`webapp/lib/logger.test.ts`
 
-- [ ] **步骤 1：定义统一事件字段**
+- [x] **步骤 1：定义统一事件字段**
 
 统一使用 `timestamp`、`level`、`service`、`event`、`component`、`operation`、`request_id`、`session_id`、`room_id`、`stream_id`、`browser`、`os`、`duration_ms`、`error` 和 `context`，并为 `context` 定义允许使用的键名列表。
 
-- [ ] **步骤 2：在 Go 中增加请求关联**
+- [x] **步骤 2：在 Go 中增加请求关联**
 
 当请求没有 `X-Request-ID` 时生成一个 id，将它放入请求上下文并写回响应头；使用 `log/slog` 将方法、路径、状态码、耗时和请求 id 输出为一条 JSON 日志。
 
-- [ ] **步骤 3：增加前端事件接口**
+- [x] **步骤 3：增加前端事件接口**
 
 在 `POST /client-events` 接收最大 16 KiB 的 JSON 请求。写入日志前丢弃凭据、SDP、ICE candidate、设备 label 和媒体数据。合法事件返回 202，格式不合法返回 400。
 
-- [ ] **步骤 4：增加前端日志器和 API 错误类型**
+- [x] **步骤 4：增加前端日志器和 API 错误类型**
 
 每个浏览器会话生成一个 `session_id`。每次 API 请求发送 `X-Request-ID`；非 2xx 响应转换成包含状态码、错误码、消息和请求 id 的错误。开发环境以 JSON 输出警告和错误，生产环境只向 `/client-events` 上报警告和错误。
 
-- [ ] **步骤 5：记录媒体生命周期事件**
+- [x] **步骤 5：记录媒体生命周期事件**
 
 为权限请求、设备枚举、WHIP 启动/停止/重启/失败、WHEP 启动/停止/重启/失败、房间刷新和离会清理增加事件。事件带房间 id 和流 id，不得带 token 或 SDP。
 
-- [ ] **步骤 6：验证诊断输出**
+- [x] **步骤 6：验证诊断输出**
 
 执行日志单元测试并启动一个会议。预期结果：终端输出为每行一个 JSON；发生媒体或 API 失败时，可以用 `session_id` 和 `request_id` 筛选完整链路。
 

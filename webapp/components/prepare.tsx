@@ -9,6 +9,7 @@ import {
 } from '../store/atom'
 import { getStorageName, setStorageName, getStorageStream } from '../lib/storage'
 import { setStream } from '../lib/api'
+import { clientLogger } from '../lib/logger'
 
 export default function Prepare(_props: { meetingId: string }) {
   const [loading, setLoading] = useState<boolean>(false)
@@ -29,6 +30,7 @@ export default function Prepare(_props: { meetingId: string }) {
     setStorageName(displayName)
     await restart()
     setSyncUserStatus((status) => setStream(id, status))
+    clientLogger.info('meeting_joined', { component: 'meeting', operation: 'join', roomId: _props.meetingId, streamId: id })
     setLoading(false)
   }
 

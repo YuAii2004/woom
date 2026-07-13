@@ -6,6 +6,7 @@
     "dev": "vite -c webapp/vite.config.ts",
     "dev-refresh": "cross-env USE_REFRESH=true npm run dev",
     "lint": "eslint && tsc --noEmit",
+    "test:unit": "vitest run",
     "build": "npm run lint && vite build -c webapp/vite.config.ts",
     "build-refresh": "npm run lint && cross-env USE_REFRESH=true npm run build",
     "preview": "vite preview -c webapp/vite.config.ts"
@@ -40,6 +41,7 @@
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.14.0",
     "unocss": "^0.64.1",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^4.1.10"
   }
 }

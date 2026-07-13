@@ -16,6 +16,7 @@ import SvgEnd from './svg/end'
 import { getRoom, delStream, Stream } from '../lib/api'
 import { getStorageStream } from '../lib/storage'
 import useWhipClient from './use/whip'
+import { clientLogger } from '../lib/logger'
 
 export default function Layout(props: { meetingId: string }) {
   const [copyStatus, setCopyStatus] = useState(false)
@@ -32,20 +33,31 @@ export default function Layout(props: { meetingId: string }) {
   const {stop, setSyncUserStatus} = useWhipClient(localStreamId)
 
   const refresh = async () => {
-    const data = (await getRoom(props.meetingId)).streams
-    if (data) {
-      const r = Object.keys(data)
-        .filter(i => i !== localStreamId)
-        .filter(i => !!i)
-        .reduce((map, i) => {
-          map[i] = data[i]
-          return map
-        }, {} as { [_: string]: Stream })
-      setRemoteUserStatus(r)
+    try {
+      const data = (await getRoom(props.meetingId)).streams
+      if (data) {
+        const r = Object.keys(data)
+          .filter(i => i !== localStreamId)
+          .filter(i => !!i)
+          .reduce((map, i) => {
+            map[i] = data[i]
+            return map
+          }, {} as { [_: string]: Stream })
+        setRemoteUserStatus(r)
+      }
+      clientLogger.debug('room_refreshed', { component: 'meeting', operation: 'refresh', roomId: props.meetingId })
+    } catch (error) {
+      clientLogger.error('room_refresh_failed', {
+        component: 'meeting',
+        operation: 'refresh',
+        roomId: props.meetingId,
+        error: { kind: 'room_refresh_failed', message: error instanceof Error ? error.message : String(error) },
+      })
     }
   }
 
   const callEnd = async () => {
+    clientLogger.info('meeting_leave', { component: 'meeting', operation: 'leave', roomId: props.meetingId, streamId: localStreamId })
     delStream(props.meetingId, localStreamId)
 
     setMeetingJoined(false)
@@ -55,6 +67,7 @@ export default function Layout(props: { meetingId: string }) {
 
   useEffect(() => {
     const cleanup = () => {
+      clientLogger.info('meeting_cleanup', { component: 'meeting', operation: 'cleanup', roomId: props.meetingId, streamId: localStreamId })
       delStream(props.meetingId, localStreamId)
     }
     // NOTE:

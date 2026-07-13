@@ -22,6 +22,7 @@ import { SvgSetting } from './svg/setting'
 import Settings from './settings'
 
 import {useSettingStore} from '../store/settingStore'
+import { clientLogger } from '../lib/logger'
 
 function toDevice(info: MediaDeviceInfo): Device {
   const deviceId = info.deviceId
@@ -65,8 +66,9 @@ export default function DeviceBar(props: { streamId: string }) {
 
   const [isSetting, setIsSetting] = useState(false)
 
-  const permissionsQuery = async () =>
-    (await Promise.all(['camera', 'microphone'].map(
+  const permissionsQuery = async () => {
+    clientLogger.debug('permission_query_start', { component: 'device', operation: 'permissions' })
+    const statuses = await Promise.all(['camera', 'microphone'].map(
       // NOTE:
       // Firefox don't have `camera` and `microphone` in permissions
       // https://developer.mozilla.org/en-US/docs/Web/API/Permissions/query#name
@@ -77,7 +79,8 @@ export default function DeviceBar(props: { streamId: string }) {
       // https://w3c.github.io/permissions/
       // Reference: https://developer.mozilla.org/en-US/docs/Web/API/Permissions_API
       i => navigator.permissions.query({ name: i as PermissionName })
-    ))).map(status => {
+    ))
+    statuses.map(status => {
       // NOTE:
       // Chrome: audio_capture, video_capture
       // Safari: microphone, camera
@@ -88,8 +91,11 @@ export default function DeviceBar(props: { streamId: string }) {
         setPermissionVideo(status.state)
       }
     })
+    clientLogger.info('permission_query_complete', { component: 'device', operation: 'permissions' })
+  }
 
   const updateDeviceList = async () => {
+    clientLogger.debug('device_enumeration_start', { component: 'device', operation: 'enumerate' })
     // to obtain non-empty device label, there needs to be an active media stream or persistent permission
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaDeviceInfo/label#value
     try {
@@ -105,6 +111,7 @@ export default function DeviceBar(props: { streamId: string }) {
     }
 
     const devices = (await navigator.mediaDevices.enumerateDevices()).filter(i => !!i.deviceId)
+    clientLogger.info('device_enumeration_complete', { component: 'device', operation: 'enumerate' })
 
     const speakers = devices.filter(i => i.kind === 'audiooutput').map(toDevice)
     const audios = devices.filter(i => i.kind === 'audioinput').map(toDevice)
@@ -131,6 +138,7 @@ export default function DeviceBar(props: { streamId: string }) {
   }
 
   const init = async () => {
+    clientLogger.info('device_init_start', { component: 'device', operation: 'initialize' })
     try {
       (await navigator.mediaDevices.getUserMedia({ video: true, audio: true })).getTracks().map(track => track.stop())
       // NOTE:
@@ -149,6 +157,7 @@ export default function DeviceBar(props: { streamId: string }) {
       } catch { /* empty */ }
     }
     await updateDeviceList()
+    clientLogger.info('device_init_complete', { component: 'device', operation: 'initialize' })
   }
 
   useEffect(() => {
