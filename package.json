@@ -7,7 +7,7 @@
     "dev:vue": "vite -c vueapp/vite.config.ts",
     "dev-refresh": "cross-env USE_REFRESH=true npm run dev",
     "lint": "eslint && tsc --noEmit",
-    "test:unit": "vitest run --exclude tests/e2e/**",
+    "test:unit": "vitest run --exclude tests/e2e/** --exclude tests/e2e-vue/**",
     "test:e2e": "playwright test",
     "test:e2e:vue": "playwright test -c vue-playwright.config.ts",
     "test:e2e:ui": "playwright test --ui",

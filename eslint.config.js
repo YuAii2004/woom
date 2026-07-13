@@ -6,7 +6,8 @@ import stylisticJs from '@stylistic/eslint-plugin-js'
 export default ts.config(
   {
     ignores: [
-      'static/'
+      'static/',
+      'vueapp/**/*.cjs'
     ]
   },
   js.configs.recommended,
