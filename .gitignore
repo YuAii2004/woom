@@ -9,3 +9,4 @@ dist-ssr
 *.local
 playwright-report/
 test-results/
+rust/target/

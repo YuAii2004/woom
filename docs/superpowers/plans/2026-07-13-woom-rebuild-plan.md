@@ -180,33 +180,25 @@
 **涉及文件：**
 
 - 新增：`rust/Cargo.toml`
-- 新增：`rust/woom-server/Cargo.toml`
-- 新增：`rust/woom-server/src/main.rs`
-- 新增：`rust/woom-server/src/config.rs`
-- 新增：`rust/woom-server/src/error.rs`
-- 新增：`rust/woom-server/src/http.rs`
-- 新增：`rust/woom-server/src/auth.rs`
-- 新增：`rust/woom-server/src/rooms.rs`
-- 新增：`rust/woom-server/src/streams.rs`
-- 新增：`rust/woom-server/src/live777.rs`
-- 新增：`rust/woom-server/src/observability.rs`
-- 新增测试：`rust/woom-server/tests/api_contract.rs`
 - 新增：`rust/rust-toolchain.toml`
-- 修改：`.github/workflows/build.yml`
+- 新增：`rust/src/main.rs`
+- 新增：`rust/src/lib.rs`
+- 新增测试：`rust/tests/contract.rs`
+- 修改：`.gitignore`
 
-- [ ] **步骤 1：建立严格的 Rust 工作区**
+- [x] **步骤 1：建立严格的 Rust 工作区**
 
 使用 Rust stable、2024 版、`forbid(unsafe_code)`，并在持续集成中执行 `cargo fmt --check`、`cargo check`、`cargo clippy --all-targets --all-features -- -D warnings` 和 `cargo test`。锁定直接依赖并提交 `rust/Cargo.lock`。
 
-- [ ] **步骤 2：实现配置和错误类型**
+- [x] **步骤 2：实现配置和错误类型**
 
 解析 `SECRET`、`PORT`、`REDIS_URL`、`LIVE777_URL` 和 `LIVE777_TOKEN`，默认值与 Go 保持一致。定义可序列化的错误响应，包含错误码、公开消息和请求 id。
 
-- [ ] **步骤 3：实现 JWT 和请求中间件**
+- [x] **步骤 3：实现 JWT 和请求中间件**
 
 校验签名算法、签名、过期时间、签发时间和生效时间，不接受任意算法。复用统一请求 id 和 JSON 日志字段。
 
-- [ ] **步骤 4：实现 Redis JSON 房间和流操作**
+- [x] **步骤 4：实现 Redis JSON 房间和流操作**
 
 只读写版本 1 的 JSON 值。匹配 Go 的房间 id、流 id、状态和 HTTP 响应行为。使用可取消的 Tokio 操作，并把 Redis 错误映射为稳定的 503/500 响应。
 
