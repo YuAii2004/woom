@@ -14,8 +14,9 @@ test('两名用户可以创建并加入同一会议', async ({ browser }) => {
     await expect(firstPage.getByRole('button', { name: '离开会议' })).toBeVisible({ timeout: 15_000 })
 
     const meetingId = await firstPage.locator('#meeting-id').innerText()
-    await secondPage.goto('/')
-    await secondPage.getByPlaceholder('输入会议号').fill(meetingId)
+    const inviteUrl = await firstPage.locator('#invite-link').inputValue()
+    expect(inviteUrl).toBe(`${new URL(firstPage.url()).origin}/${meetingId}`)
+    await secondPage.goto(inviteUrl)
     await secondPage.getByRole('button', { name: '加入' }).click()
     await expect(secondPage.getByRole('heading', { name: '准备加入' })).toBeVisible()
     await secondPage.getByRole('button', { name: '加入会议' }).click()

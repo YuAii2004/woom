@@ -37,6 +37,7 @@ const mediaStream = ref<MediaStream | null>(null)
 const room = ref<Room | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
+const inviteCopied = ref(false)
 const remoteMediaVersion = ref(0)
 let publisher: { client: WHIPClient, pc: RTCPeerConnection } | undefined
 const remoteMedia = new Map<string, { client: WHEPClient, pc: RTCPeerConnection, stream: MediaStream }>()
@@ -46,6 +47,8 @@ const remoteStreams = computed(() => {
   remoteMediaVersion.value
   return Object.entries(room.value?.streams || {}).filter(([id]) => id !== streamId.value)
 })
+
+const inviteUrl = computed(() => meetingId.value ? `${location.origin}/${meetingId.value}` : '')
 
 async function ensureUser() {
   if (token.value && streamId.value) return
@@ -100,8 +103,19 @@ async function api<T>(url: string, init: RequestInit = {}) {
 async function enterPrepare(id: string) {
   meetingId.value = id
   meetingInput.value = id
+  inviteCopied.value = false
   localStorage.setItem('woom-meeting', id)
   screen.value = 'prepare'
+}
+
+async function copyInviteLink() {
+  if (!inviteUrl.value) return
+  try {
+    await navigator.clipboard.writeText(inviteUrl.value)
+    inviteCopied.value = true
+  } catch {
+    errorMessage.value = '无法复制邀请链接，请手动复制'
+  }
 }
 
 async function createMeeting() {
@@ -311,6 +325,13 @@ onBeforeUnmount(() => {
         <div class="card border border-base-300 bg-base-100 shadow-xl">
           <div class="card-body">
             <h2 class="card-title">准备加入</h2>
+            <div class="form-control">
+              <div class="label"><span class="label-text">会议邀请链接</span></div>
+              <div class="join w-full">
+                <input id="invite-link" :value="inviteUrl" readonly class="input input-bordered join-item w-full" aria-label="会议邀请链接" />
+                <button class="btn btn-secondary join-item" type="button" @click="copyInviteLink">{{ inviteCopied ? '已复制' : '复制链接' }}</button>
+              </div>
+            </div>
             <video v-if="mediaStream" :ref="setVideoStream" autoplay muted playsinline class="w-full rounded-box bg-black" />
             <div v-else class="flex aspect-video items-center justify-center rounded-box bg-neutral text-neutral-content">点击加入后开启摄像头</div>
             <label class="form-control mt-4">
