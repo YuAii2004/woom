@@ -1,4 +1,4 @@
-name: 部署到 Fly
+name: Deploy to Fly
 
 on:
   push:
@@ -7,14 +7,14 @@ on:
 
 jobs:
   deploy:
-    name: 部署代理服务
+    name: Deploy proxy service
     runs-on: ubuntu-latest
     steps:
-      - name: 检出代码
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: 配置 flyctl
+      - name: Set up flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: 部署到 fly.io
+      - name: Deploy to fly.io
         run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

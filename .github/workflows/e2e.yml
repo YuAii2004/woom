@@ -1,4 +1,4 @@
-name: Playwright 端到端测试
+name: Playwright End-to-End Tests
 
 on:
   push:
@@ -16,41 +16,41 @@ jobs:
         browser: [chrome, firefox, edge]
 
     steps:
-      - name: 检出代码
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 配置 Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: 配置 Rust
+      - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
 
-      - name: 安装前端依赖
+      - name: Install frontend dependencies
         run: npm ci
 
-      - name: 启动会议依赖服务
+      - name: Start meeting dependency services
         run: docker compose up -d --wait redis live777
 
-      - name: 安装 Playwright 浏览器及 Linux 依赖
+      - name: Install Playwright browsers and Linux dependencies
         if: runner.os == 'Linux'
         run: npx playwright install --with-deps ${{ matrix.browser }}
 
-      - name: 安装 Playwright 浏览器
+      - name: Install Playwright browser
         if: runner.os != 'Linux'
         run: npx playwright install ${{ matrix.browser }}
 
-      - name: 运行端到端测试
+      - name: Run end-to-end tests
         run: npm run test:e2e -- --project=${{ matrix.browser }}
         env:
           REDIS_URL: redis://127.0.0.1:6379/0
           LIVE777_URL: http://127.0.0.1:7777
 
-      - name: 上传 Playwright 报告
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
