@@ -41,11 +41,6 @@ jobs:
         if: runner.os == 'macOS'
         run: bash .github/scripts/start-native-dependencies.sh
 
-      - name: Start Windows dependency services
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: .github/scripts/start-native-dependencies.ps1
-
       - name: Install Playwright browsers and Linux dependencies
         if: runner.os == 'Linux'
         run: npx playwright install --with-deps "$PLAYWRIGHT_BROWSER"
@@ -58,7 +53,22 @@ jobs:
         env:
           PLAYWRIGHT_BROWSER: ${{ matrix.browser == 'edge' && 'msedge' || matrix.browser }}
 
+      - name: Run end-to-end tests on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .github/scripts/start-native-dependencies.ps1
+          try {
+            npm run test:e2e -- --project=${{ matrix.browser }}
+          } finally {
+            .github/scripts/stop-native-dependencies.ps1
+          }
+        env:
+          REDIS_URL: redis://127.0.0.1:6379/0
+          LIVE777_URL: http://127.0.0.1:7777
+
       - name: Run end-to-end tests
+        if: runner.os != 'Windows'
         run: npm run test:e2e -- --project=${{ matrix.browser }}
         env:
           REDIS_URL: redis://127.0.0.1:6379/0
@@ -81,11 +91,6 @@ jobs:
       - name: Stop macOS dependency services
         if: always() && runner.os == 'macOS'
         run: bash .github/scripts/stop-native-dependencies.sh
-
-      - name: Stop Windows dependency services
-        if: always() && runner.os == 'Windows'
-        shell: pwsh
-        run: .github/scripts/stop-native-dependencies.ps1
 
       - name: Upload Playwright report
         if: always()
