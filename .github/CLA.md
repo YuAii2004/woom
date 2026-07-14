@@ -1,51 +1,49 @@
-# WOOM 贡献者许可协议
+# WOOM Contributor License Agreement
 
-为明确任何个人或实体向 WOOM 提交贡献时授予的知识产权许可，WOOM 必须留存每位贡献者签署的《贡献者许可协议》（以下简称“本协议”），以确认其同意以下许可条款。本协议既用于保护贡献者，也用于保护 WOOM 及其用户；本协议不改变您将自己的贡献用于其他目的的权利。
+To clarify the intellectual property license granted with contributions from any person or entity, WOOM must have on file a signed Contributor License Agreement ("CLA") from each contributor, indicating agreement with the license terms below. This agreement is for your protection as a contributor as well as the protection of the WOOM and its users; it does not change your rights to use your own contributions for any other purpose.
 
-您接受并同意以下条款，这些条款适用于您过去、现在及未来提交给 WOOM 的贡献。您应在提交第一份贡献前签署本协议。除本协议授予 WOOM 及 WOOM 软件接收者的许可外，您保留对自己贡献的全部权利、所有权和利益。
+You accept and agree to the following terms and conditions for your past, present and future contributions submitted to WOOM. You should sign this agreement before submitting your first contribution. Except for the license granted herein to WOOM and recipients of software distributed by WOOM, You reserve all right, title, and interest in and to Your Contributions.
 
-1. 协议双方。
+1. Parties.
 
-   （a）“WOOM”指项目运营方 BINBAT LTD，该公司注册于英格兰和威尔士公司注册处。
+   (a) "WOOM" refers to the project's operator, BINBAT LTD registered in Republic of Companies for England and Wales.
 
-   （b）“您”或“您的”指贡献的著作权所有者，或经著作权所有者授权、代表其与 WOOM 签订本协议的法人实体。
+   (b) "You" (or "Your") means the copyright owner or legal entity authorized by the copyright owner that is making this Agreement with WOOM.
 
-2. 定义。“贡献”指您有意提交给 WOOM、用于纳入 WOOM 拥有或管理的任何产品或其文档（以下简称“作品”）的原创作品，包括对现有作品的修改或补充。在本定义中，“提交”指发送给 WOOM 或其代表的任何电子、口头或书面通信，包括但不限于用于讨论和改进作品、由 WOOM 管理或代表 WOOM 管理的电子邮件列表、源代码管理系统和问题跟踪系统中的通信；但明确标记或以其他书面方式指定为“非贡献”的通信除外。
+2. Definitions. "Contribution" shall mean any original work of authorship, including any modifications or additions to an existing work, that is intentionally submitted by You to WOOM for inclusion in, or documentation of, any of the products owned or managed by WOOM (the "Work"). For the purposes of this definition, "submitted" means any form of electronic, verbal, or written communication sent to WOOM or its representatives, including but not limited to communication on electronic mailing lists, source code control systems, and issue tracking systems that are managed by, or on behalf of, WOOM for the purpose of discussing and improving the Work, but excluding communication that is conspicuously marked or otherwise designated in writing by You as "Not a Contribution".
 
-3. 著作权许可授予。在遵守本协议条款的前提下，您特此向 WOOM 及 WOOM 分发的软件接收者授予永久、全球、非排他、免费、免版税且不可撤销的著作权许可，以使用、复制、重制、准备贡献及其衍生作品、分发、再许可，并公开表演和展示贡献及其衍生作品。上述行为可以依据任何许可条款进行，包括但不限于开源许可、二进制许可、专有许可或商业许可。
+3. Grant of Copyright License. Subject to the terms and conditions of this Agreement, You hereby grant to WOOM and to recipients of software distributed by WOOM a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to use, copy, reproduce, prepare derivative works of, distribute, sublicense, and publicly perform and display the Contribution and such derivative works on any licensing terms, including without limitation open source licenses and binary, proprietary, or commercial licenses.
 
-4. 专利许可授予。在遵守本协议条款的前提下，您特此向 WOOM 及 WOOM 分发的软件接收者授予永久、不可撤销、非排他、全球、免费且免版税的专利许可，以制造、委托制造、使用、销售、许诺销售、进口以及以其他方式转让您的全部或部分贡献，无论贡献单独使用、与其他内容组合使用，还是包含在因提交贡献而产生的任何产品、作品或材料中；并可通过多层再许可或其他许可安排向第三方再许可相同权利。
+4. Grant of Patent License. Subject to the terms and conditions of this Agreement, You hereby grant to WOOM and to recipients of software distributed by WOOM a perpetual, irrevocable, non-exclusive, worldwide, no-charge, royalty-free patent license to make, have made, use, sell, offer to sell, import, and otherwise transfer your Contribution in whole or in part, alone or in combination with or included in any product, work or materials arising out of the project to which your contribution was submitted, and to sublicense these same rights to third parties through multiple levels of sublicensees or other licensing arrangements.
 
-5. 除上述授予的权利外，您保留对贡献的全部权利、所有权和利益。您依据本条款向 WOOM 授予的权利，自您首次向 WOOM 提交贡献之日起生效，即使该提交发生在您签署本协议之前。
+5. Except as set out above, You keep all right, title, and interest in your contribution. The rights that you grant to WOOM under these terms are effective on the date you first submitted a contribution to WOOM, even if your submission took place before the date you sign these terms.
 
-6. 您承诺：
+6. You promise that:
 
-- 每一份贡献均为您的原创作品，并且您依法有权授予上述许可。
-- 据您所知，每一份贡献均不侵犯任何第三方的著作权、商标权、专利权或其他知识产权。
-- 您提交贡献时，会完整说明您本人知悉、且与贡献任何部分相关的第三方许可或其他限制，包括但不限于相关专利和商标。
-- 如果您是个人，且您的雇主对您创作、包含在贡献中的知识产权享有权利，则您声明：已获得代表该雇主提交贡献的许可；或您的雇主已放弃对您向 WOOM 提交的贡献所享有的权利；或您的雇主已与 WOOM 签署单独的企业贡献者许可协议。
+- Each of Your Contributions is Your original work and that you are legally entitled to grant the above license.
+- Each of Your Contributions does not to the best of your knowledge violate any third party's copyrights, trademarks, patents, or other intellectual property rights;
+- Your Contribution submissions include complete details of any third-party license or other restriction (including, but not limited to, related patents and trademarks) of which you are personally aware and which are associated with any part of Your Contributions.
+- If You are an individual and if your employer(s) has rights to intellectual property that you create that includes your Contributions, you represent that you have received permission to make Contributions on behalf of that employer, that your employer has waived such rights for your Contributions to WOOM, or that your employer has executed a separate Corporate CLA with WOOM.
 
-7. 您以“现状”提供贡献，不提供任何明示或默示的保证或条件，包括但不限于权属、不侵权、适销性或特定用途适用性的任何保证或条件。
+7. You provide Your Contributions on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE.
 
-8. 如果您发现任何事实或情形可能使上述声明在任何方面不准确，您同意通知 WOOM。
+8. You agree to notify WOOM of any facts or circumstances of which you become aware that would make these representations inaccurate in any respect.
 
-9. 本协议受英格兰共和国法律管辖，但不适用法律冲突原则。
+9. This Agreement will be governed by the laws of Republic of England without reference to conflict of laws principles.
 
-## 贡献者名单
+## List of Contributors
 
-以下签署人是名为“WOOM”的项目所属代码仓库的贡献者。每位签署人均已阅读、理解并同意本文件“WOOM 贡献者许可协议”部分所列条款；其同意日期记录在真实姓名（或实体名称）及 GitHub 账户名旁。
+The below-signed are contributors to a code repository that is part of the project named "WOOM". Each below-signed contributor has read, understand and agrees to the terms above in the section within this document entitled "WOOM Contributor License Agreement" as of the date beside their real name (or entity name) and GitHub account name.
 
 ---
 
 <!--
-示例：
-
+Example:
 - Metal A-wing, @a-wing, 2024/10/23
 -->
-
-- Metal A-wing, @a-wing, 2024/10/23
-- Hongcha Zhang, @hongcha98, 2024/10/24
+ @@ -48,4 +48,4 @@ Example:
 - Winter Zhang, @WinterJack002, 2024/10/26
 - Rocket Aaron, @rocka, 2024/11/06
 - xdzqyyds, @xdzqyyds, 2024/11/19
 - Lucius Huang, @huanghuang358, 2025/2/16
+- Junxiang Yu，@YuAii2004，2026/7/14
