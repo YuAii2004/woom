@@ -33,22 +33,59 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Start meeting dependency services
+      - name: Start Linux dependency services
+        if: runner.os == 'Linux'
         run: docker compose up -d --wait redis live777
+
+      - name: Start macOS dependency services
+        if: runner.os == 'macOS'
+        run: bash .github/scripts/start-native-dependencies.sh
+
+      - name: Start Windows dependency services
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .github/scripts/start-native-dependencies.ps1
 
       - name: Install Playwright browsers and Linux dependencies
         if: runner.os == 'Linux'
-        run: npx playwright install --with-deps ${{ matrix.browser }}
+        run: npx playwright install --with-deps "$PLAYWRIGHT_BROWSER"
+        env:
+          PLAYWRIGHT_BROWSER: ${{ matrix.browser == 'edge' && 'msedge' || matrix.browser }}
 
       - name: Install Playwright browser
         if: runner.os != 'Linux'
-        run: npx playwright install ${{ matrix.browser }}
+        run: npx playwright install "$PLAYWRIGHT_BROWSER"
+        env:
+          PLAYWRIGHT_BROWSER: ${{ matrix.browser == 'edge' && 'msedge' || matrix.browser }}
 
       - name: Run end-to-end tests
         run: npm run test:e2e -- --project=${{ matrix.browser }}
         env:
           REDIS_URL: redis://127.0.0.1:6379/0
           LIVE777_URL: http://127.0.0.1:7777
+
+      - name: Collect Linux dependency logs
+        if: always() && runner.os == 'Linux'
+        run: |
+          mkdir -p "$RUNNER_TEMP/woom-native-deps"
+          docker compose logs --no-color redis live777 > "$RUNNER_TEMP/woom-native-deps/compose.log" 2>&1 || true
+
+      - name: Upload dependency logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-logs-${{ matrix.os }}-${{ matrix.browser }}
+          path: ${{ runner.temp }}/woom-native-deps/
+          if-no-files-found: ignore
+
+      - name: Stop macOS dependency services
+        if: always() && runner.os == 'macOS'
+        run: bash .github/scripts/stop-native-dependencies.sh
+
+      - name: Stop Windows dependency services
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: .github/scripts/stop-native-dependencies.ps1
 
       - name: Upload Playwright report
         if: always()
