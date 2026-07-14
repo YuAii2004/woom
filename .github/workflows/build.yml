@@ -1,4 +1,4 @@
-name: 构建与静态检查
+name: Build and Static Checks
 
 on:
   push:
@@ -9,28 +9,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: 检出代码
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 配置 Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: 配置 Rust
+      - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
-      - name: 安装前端依赖
+      - name: Install frontend dependencies
         run: npm ci
 
-      - name: 检查 Vue 并构建前端
+      - name: Lint Vue and build frontend
         run: npm run lint:vue && npm run build
 
-      - name: 检查 Rust 服务
+      - name: Check Rust service
         run: cargo fmt --manifest-path rust/Cargo.toml -- --check && cargo clippy --manifest-path rust/Cargo.toml --all-targets --all-features -- -D warnings && cargo test --manifest-path rust/Cargo.toml
 
-      - name: 构建 Rust/Vue 镜像
+      - name: Build Rust/Vue image
         run: docker build -t woom:ci .
