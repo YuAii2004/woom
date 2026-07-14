@@ -321,7 +321,8 @@ async fn redis_hash(state: &AppState, room_id: &str) -> Result<HashMap<String, S
         .redis
         .get_multiplexed_async_connection()
         .await
-        .map_err(|_| {
+        .map_err(|err| {
+            eprintln!("Redis connection failed while reading room: {err}");
             AppError::new(
                 StatusCode::SERVICE_UNAVAILABLE,
                 "dependencies_unavailable",
@@ -346,7 +347,8 @@ async fn write_hash(
         .redis
         .get_multiplexed_async_connection()
         .await
-        .map_err(|_| {
+        .map_err(|err| {
+            eprintln!("Redis connection failed while writing room: {err}");
             AppError::new(
                 StatusCode::SERVICE_UNAVAILABLE,
                 "dependencies_unavailable",
