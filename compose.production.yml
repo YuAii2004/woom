@@ -14,7 +14,7 @@ services:
 
   live777:
     image: ghcr.io/binbat/live777-server:0.7.3
-    hostname: live777
+    network_mode: host
     restart: unless-stopped
 
   woom:
@@ -26,9 +26,11 @@ services:
         condition: service_started
     environment:
       REDIS_URL: redis://redis:6379/0
-      LIVE777_URL: http://live777:7777
+      LIVE777_URL: http://host.docker.internal:7777
       SECRET: ${WOOM_SECRET:?WOOM_SECRET is required}
       LIVE777_TOKEN: ${LIVE777_TOKEN:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   caddy:

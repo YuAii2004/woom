@@ -13,10 +13,7 @@ services:
 
   live777:
     image: ghcr.io/binbat/live777-server:0.7.3
-    container_name: live777
-    hostname: live777
-    ports:
-      - "7777:7777/tcp"
+    network_mode: host
 
   woom:
     build: .
@@ -28,7 +25,9 @@ services:
         condition: service_started
     environment:
       REDIS_URL: redis://redis:6379/0
-      LIVE777_URL: http://live777:7777
+      LIVE777_URL: http://host.docker.internal:7777
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "4000:4000/tcp"
 
