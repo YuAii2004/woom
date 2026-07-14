@@ -9,4 +9,5 @@ dist-ssr
 *.local
 playwright-report/
 test-results/
+diagnostic-report/
 rust/target/

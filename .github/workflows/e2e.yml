@@ -88,6 +88,20 @@ jobs:
           path: ${{ runner.temp }}/woom-native-deps/
           if-no-files-found: ignore
 
+      - name: Generate diagnostic report
+        if: always()
+        run: npm run diagnose -- --input test-results --input playwright-report --input "${{ runner.temp }}/woom-native-deps" --output-dir diagnostic-report
+        env:
+          BROWSER: ${{ matrix.browser }}
+
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostic-${{ matrix.os }}-${{ matrix.browser }}
+          path: diagnostic-report/
+          if-no-files-found: ignore
+
       - name: Stop macOS dependency services
         if: always() && runner.os == 'macOS'
         run: bash .github/scripts/stop-native-dependencies.sh

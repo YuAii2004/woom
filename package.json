@@ -12,6 +12,7 @@
     "test:e2e:vue": "playwright test -c vue-playwright.config.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
+    "diagnose": "node scripts/diagnose.mjs",
     "build": "npm run lint:vue && vite build -c vueapp/vite.config.ts",
     "build:vue": "npm run build",
     "lint:vue": "vue-tsc --noEmit -p tsconfig.vue.json",
