@@ -23,6 +23,8 @@ RUN cargo build --release --manifest-path rust/Cargo.toml
 
 FROM alpine:3.21 AS runtime
 
+WORKDIR /app
+
 COPY --from=rust-builder /app/rust/target/release/woom-server /usr/bin/woom-server
 COPY --from=frontend-builder /app/static/dist /app/static/dist
 
