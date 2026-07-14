@@ -23,6 +23,16 @@ Set `WOOM_DOMAIN` to the DNS name and replace `WOOM_SECRET` with a long random v
 docker compose --env-file .env.production -f compose.production.yml up -d --build
 ```
 
+For cloud networks where Docker Hub, GitHub Container Registry, or crates.io are slow, build the WOOM image with the mirror Dockerfile first and run the same override used by the deployed server:
+
+```bash
+docker build -f Dockerfile.deploy.mirror -t local/woom:deploy .
+docker compose --env-file .env.production \
+  -f compose.production.yml \
+  -f compose.deploy.yml \
+  up -d
+```
+
 Check service health:
 
 ```bash

@@ -1,0 +1,4 @@
+services:
+  woom:
+    image: local/woom:deploy
+    build: null

@@ -1,4 +1,4 @@
-{$WOOM_DOMAIN} {
+{$WOOM_DOMAIN}, www.{$WOOM_DOMAIN} {
     encode gzip
     reverse_proxy woom:4000
 }
