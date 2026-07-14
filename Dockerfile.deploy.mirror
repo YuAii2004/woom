@@ -8,13 +8,22 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build
+RUN npx vite build -c vueapp/vite.config.ts
 
 FROM rust:1.91-alpine AS rust-builder
 
 WORKDIR /app
 
 RUN apk add --no-cache build-base
+
+RUN mkdir -p /usr/local/cargo && printf '%s\n' \
+  '[source.crates-io]' \
+  'replace-with = "rsproxy-sparse"' \
+  '[source.rsproxy-sparse]' \
+  'registry = "sparse+https://rsproxy.cn/index/"' \
+  '[net]' \
+  'git-fetch-with-cli = true' \
+  > /usr/local/cargo/config.toml
 
 COPY rust/Cargo.toml rust/Cargo.lock rust/
 COPY rust/src rust/src

@@ -1,0 +1,77 @@
+# Production Deployment
+
+This deployment runs WOOM, Redis, Live777, and Caddy on one Docker host. Caddy terminates HTTPS and forwards traffic to the WOOM service.
+
+## Prerequisites
+
+- A Linux cloud server with a public IPv4 address
+- Docker Engine with Docker Compose
+- A DNS A record pointing the meeting domain to the server
+- Firewall access for TCP ports 80 and 443
+
+## Configure
+
+```bash
+cp .env.production.example .env.production
+```
+
+Set `WOOM_DOMAIN` to the DNS name and replace `WOOM_SECRET` with a long random value. Keep `.env.production` private.
+
+## Start
+
+```bash
+docker compose --env-file .env.production -f compose.production.yml up -d --build
+```
+
+For cloud networks where Docker Hub, GitHub Container Registry, or crates.io are slow, build the WOOM image with the mirror Dockerfile first and run the same override used by the deployed server:
+
+```bash
+docker build -f Dockerfile.deploy.mirror -t local/woom:deploy .
+docker compose --env-file .env.production \
+  -f compose.production.yml \
+  -f compose.deploy.yml \
+  up -d
+```
+
+Check service health:
+
+```bash
+curl https://meeting.example.com/healthz
+curl https://meeting.example.com/readyz
+```
+
+The first request should report that the process is alive. The second should report that Redis and Live777 are ready.
+
+## Collect Diagnostics
+
+Collect a bounded set of service logs after reproducing a meeting issue:
+
+```bash
+mkdir -p diagnostic-input
+docker compose --env-file .env.production -f compose.production.yml \
+  logs --no-color --since 30m woom caddy redis live777 \
+  > diagnostic-input/production.log 2>&1
+curl -fsS https://meeting.example.com/healthz > diagnostic-input/healthz.json
+curl -fsS https://meeting.example.com/readyz > diagnostic-input/readyz.json
+```
+
+Run the analyzer from a checkout of this repository:
+
+```bash
+npm run diagnose -- --input diagnostic-input --output-dir diagnostic-report
+```
+
+The analyzer writes sanitized JSON and Markdown reports. Share the report files instead of raw logs when possible; request identifiers, room identifiers, and stream identifiers are retained for correlation, while credentials and authorization values are removed.
+
+## Operations
+
+```bash
+docker compose --env-file .env.production -f compose.production.yml ps
+docker compose --env-file .env.production -f compose.production.yml logs -f woom caddy
+```
+
+Stop the deployment with:
+
+```bash
+docker compose --env-file .env.production -f compose.production.yml down
+```

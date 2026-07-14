@@ -7,15 +7,14 @@ on:
 
 jobs:
   deploy:
-    name: Deploy proxy
+    name: Deploy proxy service
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set flyctl
+      - name: Set up flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy to fly.io
         run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-

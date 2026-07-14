@@ -1,0 +1,352 @@
+openapi: 3.0.3
+info:
+  title: WOOM Meeting Service API
+  version: 1.0.0
+  description: Stable HTTP API contract for the first WOOM meeting-service release.
+servers:
+  - url: http://localhost:4000
+    description: Local development server
+tags:
+  - name: Users
+  - name: Rooms
+  - name: Meeting streams
+  - name: Service status
+  - name: Media proxy
+paths:
+  /user/:
+    post:
+      tags: [Users]
+      summary: Create an anonymous user
+      description: Creates a long-lived meeting stream identity and JWT.
+      responses:
+        '200':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /room/:
+    post:
+      tags: [Rooms]
+      summary: Create a meeting room
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Room created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /room/{roomId}:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    get:
+      tags: [Rooms]
+      summary: Get a meeting room
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Room returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /room/{roomId}/stream:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    post:
+      tags: [Meeting streams]
+      summary: Create a participant stream for a meeting
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Participant stream created successfully; returns the updated room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /room/{roomId}/stream/{streamId}:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+      - $ref: '#/components/parameters/StreamId'
+    patch:
+      tags: [Meeting streams]
+      summary: Update participant stream state
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Stream'
+      responses:
+        '200':
+          description: Participant stream updated successfully; returns the updated room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Meeting streams]
+      summary: Delete a participant stream
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204':
+          description: Participant stream deleted successfully; no response body
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /healthz:
+    get:
+      tags: [Service status]
+      summary: Check process liveness
+      responses:
+        '200':
+          description: Process is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /readyz:
+    get:
+      tags: [Service status]
+      summary: Check dependency readiness
+      responses:
+        '200':
+          description: Redis and service configuration are ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyStatus'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /client-events:
+    post:
+      tags: [Service status]
+      summary: Receive frontend diagnostic events
+      description: Accepts only size-limited diagnostic metadata, not credentials, media content, or WebRTC negotiation payloads.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientEvent'
+      responses:
+        '202':
+          description: Event accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /whip/{uuid}:
+    parameters:
+      - $ref: '#/components/parameters/MediaId'
+    post:
+      tags: [Media proxy]
+      summary: Proxy WHIP publish requests
+      description: Forwards the request to Live777 and may append the configured server-side Bearer token.
+      requestBody:
+        required: false
+        description: Preserves the SDP request body sent by the client.
+        content:
+          '*/*': {}
+      responses:
+        default:
+          description: Raw Live777 response
+  /whep/{uuid}:
+    parameters:
+      - $ref: '#/components/parameters/MediaId'
+    post:
+      tags: [Media proxy]
+      summary: Proxy WHEP playback requests
+      description: Forwards the request to Live777.
+      requestBody:
+        required: false
+        description: Preserves the SDP request body sent by the client.
+        content:
+          '*/*': {}
+      responses:
+        default:
+          description: Raw Live777 response
+components:
+  parameters:
+    RoomId:
+      name: roomId
+      in: path
+      required: true
+      description: Meeting room id
+      schema:
+        type: string
+    StreamId:
+      name: streamId
+      in: path
+      required: true
+      description: Participant stream id
+      schema:
+        type: string
+    MediaId:
+      name: uuid
+      in: path
+      required: true
+      description: Live777 media stream id
+      schema:
+        type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      required: [streamId, token]
+      properties:
+        streamId:
+          type: string
+        token:
+          type: string
+    Room:
+      type: object
+      required: [roomId, owner, locked]
+      properties:
+        roomId:
+          type: string
+        owner:
+          type: string
+        presenter:
+          type: string
+        locked:
+          type: boolean
+        streamId:
+          type: string
+        streams:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Stream'
+    Stream:
+      type: object
+      required: [name, state, audio, video, screen]
+      properties:
+        name:
+          type: string
+        state:
+          type: string
+        audio:
+          type: boolean
+        video:
+          type: boolean
+        screen:
+          type: boolean
+    Error:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        requestId:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    ReadyStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready]
+    ClientEvent:
+      type: object
+      required: [event, level, service]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum: [debug, info, warn, error]
+        service:
+          type: string
+        event:
+          type: string
+        component:
+          type: string
+        operation:
+          type: string
+        request_id:
+          type: string
+        session_id:
+          type: string
+        room_id:
+          type: string
+        stream_id:
+          type: string
+        browser:
+          type: string
+        os:
+          type: string
+        duration_ms:
+          type: integer
+          minimum: 0
+        error:
+          type: object
+          additionalProperties: true
+        context:
+          type: object
+          additionalProperties: true
+  responses:
+    BadRequest:
+      description: Invalid request format
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: Server processing failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unavailable:
+      description: Dependency services are not ready
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

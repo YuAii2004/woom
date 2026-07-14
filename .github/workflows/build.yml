@@ -1,28 +1,36 @@
-name: Build
+name: Build and Static Checks
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
-  deploy:
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    name: Deploy proxy
-    runs-on: ${{ matrix.os }}
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: latest
-      - name: Install npm dependencies
-        run: npm ci
-      - name: Build WebApp
-        run: npm run build
-      - name: Install golang
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-      - name: Build Woom
-        run: go build -tags release -trimpath
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint Vue and build frontend
+        run: npm run lint:vue && npm run build
+
+      - name: Check Rust service
+        run: cargo fmt --manifest-path rust/Cargo.toml -- --check && cargo clippy --manifest-path rust/Cargo.toml --all-targets --all-features -- -D warnings && cargo test --manifest-path rust/Cargo.toml
+
+      - name: Build Rust/Vue image
+        run: docker build -t woom:ci .
