@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $live777Version = 'v0.7.3'
 $live777Url = "https://github.com/binbat/live777/releases/download/$live777Version/live777-v0.7.3-x86_64-pc-windows-msvc.zip"
-$redisUrl = 'https://github.com/tporadowski/redis/releases/download/v5.0.14.1/Redis-x64-5.0.14.1.zip'
+$redisUrl = 'https://github.com/redis-windows/redis-windows/releases/download/7.2.14/Redis-7.2.14-Windows-x64-msys2.zip'
 $workDir = Join-Path $env:RUNNER_TEMP 'woom-native-deps'
 
 New-Item -ItemType Directory -Force -Path $workDir | Out-Null
