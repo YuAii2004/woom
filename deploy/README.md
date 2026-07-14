@@ -32,6 +32,27 @@ curl https://meeting.example.com/readyz
 
 The first request should report that the process is alive. The second should report that Redis and Live777 are ready.
 
+## Collect Diagnostics
+
+Collect a bounded set of service logs after reproducing a meeting issue:
+
+```bash
+mkdir -p diagnostic-input
+docker compose --env-file .env.production -f compose.production.yml \
+  logs --no-color --since 30m woom caddy redis live777 \
+  > diagnostic-input/production.log 2>&1
+curl -fsS https://meeting.example.com/healthz > diagnostic-input/healthz.json
+curl -fsS https://meeting.example.com/readyz > diagnostic-input/readyz.json
+```
+
+Run the analyzer from a checkout of this repository:
+
+```bash
+npm run diagnose -- --input diagnostic-input --output-dir diagnostic-report
+```
+
+The analyzer writes sanitized JSON and Markdown reports. Share the report files instead of raw logs when possible; request identifiers, room identifiers, and stream identifiers are retained for correlation, while credentials and authorization values are removed.
+
 ## Operations
 
 ```bash
