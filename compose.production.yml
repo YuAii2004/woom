@@ -1,0 +1,53 @@
+services:
+  redis:
+    image: redis:7
+    hostname: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    restart: unless-stopped
+
+  live777:
+    image: ghcr.io/binbat/live777-server:0.7.3
+    hostname: live777
+    restart: unless-stopped
+
+  woom:
+    build: .
+    depends_on:
+      redis:
+        condition: service_healthy
+      live777:
+        condition: service_started
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      LIVE777_URL: http://live777:7777
+      SECRET: ${WOOM_SECRET:?WOOM_SECRET is required}
+      LIVE777_TOKEN: ${LIVE777_TOKEN:-}
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      WOOM_DOMAIN: ${WOOM_DOMAIN:?WOOM_DOMAIN is required}
+    depends_on:
+      - woom
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  caddy-data:
+  caddy-config:
